@@ -29,6 +29,7 @@ const TOPIC_SOIL = 'sproutai/sensor/soil';
 const TOPIC_TEMP = 'sproutai/sensor/temp';
 const TOPIC_HUMIDITY = 'sproutai/sensor/humidity';
 const TOPIC_SCORE = 'sproutai/sensor/score';
+const TOPIC_SYSTEM_FAULT = 'sproutai/system/fault';
 
 const SUBSCRIBE_TOPICS = [
   DEVICE_STATUS_TOPIC,
@@ -45,6 +46,7 @@ const SUBSCRIBE_TOPICS = [
   TOPIC_SETTINGS_CMD,
   TOPIC_SETTINGS_STATUS,
   TOPIC_SCHEDULE_STATUS,
+  TOPIC_SYSTEM_FAULT,
 ];
 
 const ESP_ONLINE_TIMEOUT_MS = 15_000;
@@ -82,6 +84,8 @@ export interface MqttSensorSnapshot {
   formula_vpd: string | null;
   formula_score: string | null;
   soil_raw_dry: number | null;
+  dht_error: boolean;
+  soil_error: boolean;
   updatedAt: string | null;
   sourceTopic: string | null;
 }
@@ -153,6 +157,8 @@ const emptySensorSnapshot: MqttSensorSnapshot = {
   formula_vpd: null,
   formula_score: null,
   soil_raw_dry: null,
+  dht_error: false,
+  soil_error: false,
   plant_phase: null,
   updatedAt: null,
   sourceTopic: null,
@@ -453,6 +459,8 @@ function normalizeJsonSensorPayload(payload: string): SensorDelta | null {
       formula_vpd: typeof obj.formula_vpd === 'string' ? obj.formula_vpd : undefined,
       formula_score: typeof obj.formula_score === 'string' ? obj.formula_score : undefined,
       soil_raw_dry: parseNumeric(obj.soil_raw_dry),
+      dht_error: parseBoolean(obj.dht_error) ?? false,
+      soil_error: parseBoolean(obj.soil_error) ?? false,
     };
   } catch {
     return null;
@@ -565,6 +573,25 @@ function updateFromTopic(topic: string, payload: string) {
       }, topic);
       dispatchSettingsEvent(normalizedSchedule);
     }
+  } else if (topic === TOPIC_SYSTEM_FAULT) {
+    const parsed = parseMqttJsonPayload(trimmed);
+    if (parsed) {
+      const device = parsed.device as string;
+      const status = parsed.status as string;
+      const isFault = status === 'fault';
+      
+      if (device === 'DHT22') {
+        setSensorSnapshot({ dht_error: isFault }, topic);
+      } else if (device === 'SOIL') {
+        setSensorSnapshot({ soil_error: isFault }, topic);
+      }
+      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('nexagrow:sensor_fault', {
+          detail: { device, status, isFault }
+        }));
+      }
+    }
   }
 
   if (
@@ -575,7 +602,8 @@ function updateFromTopic(topic: string, payload: string) {
     topic.startsWith('sproutai/wifi/') ||
     topic.startsWith('sproutai/settings/') ||
     topic.startsWith('sproutai/schedule/') ||
-    topic.startsWith('sproutai/esp32/')
+    topic.startsWith('sproutai/esp32/') ||
+    topic.startsWith('sproutai/system/')
   ) {
     setSnapshot({
       lastTopic: topic,

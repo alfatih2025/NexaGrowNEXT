@@ -128,7 +128,9 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
                       <div
                         key={alert.id}
                         className={`rounded-2xl border p-3 ${
-                          alert.severity === 'danger' ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'
+                          alert.severity === 'danger' ? 'border-red-200 bg-red-50' 
+                            : alert.severity === 'info' ? 'border-blue-200 bg-blue-50' 
+                            : 'border-amber-200 bg-amber-50'
                         }`}
                       >
                         <p className="text-sm font-semibold text-slate-900">{alert.message}</p>

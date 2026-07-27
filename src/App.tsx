@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar, type PageId } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
@@ -183,6 +183,24 @@ function App() {
     checkThresholds();
   }, [liveSensorData, settings, health, createAlert]);
 
+  useEffect(() => {
+    const handleSensorFault = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { device, isFault } = customEvent.detail;
+      if (isFault) {
+        const sensorName = device === 'DHT22' ? 'Suhu & Kelembapan (DHT22)' : 'Kelembapan Tanah (Soil)';
+        createAlert(
+          'sensor_fault',
+          `⚠️ Sensor ${sensorName} tidak terdeteksi atau rusak! Periksa koneksi sensor.`,
+          'danger'
+        );
+      }
+    };
+    
+    window.addEventListener('nexagrow:sensor_fault', handleSensorFault);
+    return () => window.removeEventListener('nexagrow:sensor_fault', handleSensorFault);
+  }, [createAlert]);
+
   const mqttHistory = useMemo(() => getSensorHistorySnapshot(), [mqttStatus.lastMessageAt, mqttStatus.sensorSnapshot?.updatedAt]);
 
   const renderPage = () => {
@@ -259,14 +277,17 @@ function App() {
           <Header mqttStatus={mqttStatus} currentPage={currentPage} health={health} />
 
           <main className="flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6">
-            <motion.div
-              key={currentPage}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {renderPage()}
-            </motion.div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+              >
+                {renderPage()}
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>
