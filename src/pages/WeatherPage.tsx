@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CloudSun, ChevronDown, Save, MapPin, Navigation2 } from 'lucide-react';
 import { WeatherMotionForecast } from '../components/WeatherMotionForecast';
@@ -140,9 +140,14 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
   const [loadingVillages, setLoadingVillages] = useState(false);
   const [villagesError, setVillagesError] = useState<string | null>(null);
 
+  const lastSyncedRemoteLocation = useRef<string | null>(null);
+
   useEffect(() => {
-    const nextCode = settings?.location || locationCode || readStoredSelection() || DEFAULT_WEATHER_LOCATION_CODE;
-    setSelection(resolveSelectionFromCode(nextCode));
+    const nextRemote = settings?.location || locationCode;
+    if (nextRemote && nextRemote !== lastSyncedRemoteLocation.current) {
+      lastSyncedRemoteLocation.current = nextRemote;
+      setSelection(resolveSelectionFromCode(nextRemote));
+    }
   }, [locationCode, settings?.location]);
 
   useEffect(() => {
