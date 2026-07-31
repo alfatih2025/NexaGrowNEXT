@@ -158,56 +158,17 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
   );
 
   useEffect(() => {
-    let active = true;
-
     if (selection.category !== 'semarang' || !selection.district) {
       setBmkgVillages([]);
       setVillagesError(null);
       setLoadingVillages(false);
-      return () => {
-        active = false;
-      };
+      return;
     }
-
-    const districtItem = getWeatherLocationItemByPath('semarang', 'Jawa Tengah', 'Kota Semarang', selection.district);
-    const districtCode = districtItem?.code;
-
-    if (!districtCode) {
-      setBmkgVillages([]);
-      setVillagesError(null);
-      setLoadingVillages(false);
-      return () => {
-        active = false;
-      };
-    }
-
-    setLoadingVillages(true);
+    
+    // Scrape is disabled as BMKG structure changed. Using local options.
+    setBmkgVillages([]);
     setVillagesError(null);
-
-    fetch(`/api/weather-locations?district=${encodeURIComponent(districtCode)}`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Gagal memuat daftar kelurahan dari BMKG.');
-        return response.json();
-      })
-      .then((payload) => {
-        if (!active) return;
-        const items = Array.isArray(payload?.items) ? payload.items : [];
-        const villages = items.filter((item: BmkgVillageLocation) => item?.level === 'village');
-        setBmkgVillages(villages);
-        setVillagesError(villages.length > 0 ? null : 'BMKG tidak mengembalikan daftar kelurahan. Menggunakan data cadangan lokal.');
-      })
-      .catch((err) => {
-        if (!active) return;
-        setBmkgVillages([]);
-        setVillagesError(err instanceof Error ? err.message : 'Gagal memuat daftar kelurahan BMKG.');
-      })
-      .finally(() => {
-        if (active) setLoadingVillages(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    setLoadingVillages(false);
   }, [selection.category, selection.district]);
 
   useEffect(() => {

@@ -35,12 +35,7 @@ function resolveLocationLabel(code) {
 
 function resolveBmkgUrl(locationCode) {
   const code = resolveLocationCode(locationCode);
-  const dots = (code.match(/\./g) || []).length;
-  let param = 'adm4';
-  if (dots === 0) param = 'adm1';
-  else if (dots === 1) param = 'adm2';
-  else if (dots === 2) param = 'adm3';
-  return `https://api.bmkg.go.id/publik/prakiraan-cuaca?${param}=${encodeURIComponent(code)}`;
+  return `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${encodeURIComponent(code)}`;
 }
 
 const DEFAULT_WEATHER = {

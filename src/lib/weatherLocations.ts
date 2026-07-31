@@ -216,12 +216,7 @@ export function buildBmkgWeatherUrl(baseUrl: string, locationCode?: string) {
 
   try {
     const url = new URL(baseUrl, typeof window === 'undefined' ? 'https://example.com' : window.location.origin);
-    const dots = (normalizedCode.match(/\./g) || []).length;
-    let param = 'adm4';
-    if (dots === 0) param = 'adm1';
-    else if (dots === 1) param = 'adm2';
-    else if (dots === 2) param = 'adm3';
-    url.searchParams.set(param, normalizedCode);
+    url.searchParams.set('adm4', normalizedCode);
     return url.origin === 'https://example.com' ? url.pathname + url.search + url.hash : url.toString();
   } catch {
     const separator = baseUrl.includes('?') ? '&' : '?';
