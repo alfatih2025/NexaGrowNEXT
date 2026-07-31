@@ -19,7 +19,7 @@ import { useSettings } from './hooks/useSettings';
 import { useAlerts } from './hooks/useAlerts';
 import { useMqttStatus } from './hooks/useMqttStatus';
 import { getPlantHealthSummary } from './lib/plantPhase';
-import { getSensorHistorySnapshot } from './services/mqtt';
+import { getSensorHistorySnapshot, publishRainChance } from './services/mqtt';
 import { recordActivity } from './lib/activityLog';
 
 import './index.css';
@@ -200,6 +200,34 @@ function App() {
     window.addEventListener('nexagrow:sensor_fault', handleSensorFault);
     return () => window.removeEventListener('nexagrow:sensor_fault', handleSensorFault);
   }, [createAlert]);
+
+  // ============================================================
+  // AUTO-PUBLISH RAIN CHANCE KE ESP32 (setiap 3 jam)
+  // ============================================================
+  const lastRainPublishRef = useRef<number>(0);
+  const RAIN_PUBLISH_INTERVAL_MS = 3 * 60 * 60 * 1000; // 3 jam
+  const lastRainValueRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!weatherData?.current?.rain_chance) return;
+
+    const rainChance = weatherData.current.rain_chance;
+    const now = Date.now();
+    const lastPublish = lastRainPublishRef.current;
+    const lastValue = lastRainValueRef.current;
+
+    // Publish jika: pertama kali, nilai berubah, atau sudah 3 jam
+    const shouldPublish =
+      lastPublish === 0 ||
+      (rainChance !== lastValue) ||
+      (now - lastPublish >= RAIN_PUBLISH_INTERVAL_MS);
+
+    if (shouldPublish) {
+      lastRainPublishRef.current = now;
+      lastRainValueRef.current = rainChance;
+      publishRainChance(rainChance).catch(() => {});
+    }
+  }, [weatherData?.current?.rain_chance]);
 
   const mqttHistory = useMemo(() => getSensorHistorySnapshot(), [mqttStatus.lastMessageAt, mqttStatus.sensorSnapshot?.updatedAt]);
 

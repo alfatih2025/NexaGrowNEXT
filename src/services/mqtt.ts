@@ -25,6 +25,7 @@ const TOPIC_SETTINGS_STATUS = 'sproutai/settings/status';
 const TOPIC_SCHEDULE_CMD = 'sproutai/schedule/cmd';
 const TOPIC_SCHEDULE_STATUS = 'sproutai/schedule/status';
 const TOPIC_SENSOR_JSON = 'sproutai/sensor/data';
+const TOPIC_RAIN_CHANCE = 'sproutai/weather/rain_chance';
 const TOPIC_SOIL = 'sproutai/sensor/soil';
 const TOPIC_TEMP = 'sproutai/sensor/temp';
 const TOPIC_HUMIDITY = 'sproutai/sensor/humidity';
@@ -944,6 +945,38 @@ function applyLocalSnapshot(action: string, duration?: number, data?: Record<str
 
 export function syncLocalControlState(action: string, duration?: number, data?: Record<string, any>) {
   applyLocalSnapshot(action, duration, data);
+}
+
+/**
+ * Publish rain chance data to MQTT for ESP32 consumption.
+ * This is called automatically every 3 hours (or when value changes)
+ * from App.tsx so it works without opening Settings page.
+ */
+export function publishRainChance(rainChance: number) {
+  const currentClient = connectOnce();
+  if (!currentClient) return Promise.resolve(false);
+
+  const payload = JSON.stringify({
+    rainChance: Math.round(rainChance),
+    timestamp: new Date().toISOString(),
+  });
+
+  return new Promise<boolean>((resolve) => {
+    currentClient.publish(
+      TOPIC_RAIN_CHANCE,
+      payload,
+      { retain: true, qos: 1 },
+      (err?: Error | null) => {
+        if (err) {
+          console.warn('[RAIN] publish rainChance failed', err.message);
+          resolve(false);
+          return;
+        }
+        console.debug('[RAIN] published rainChance', rainChance, '%');
+        resolve(true);
+      },
+    );
+  });
 }
 
 export function announceWebPresence(status: 'online' | 'offline' = 'online') {
