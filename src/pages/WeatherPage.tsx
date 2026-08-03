@@ -326,8 +326,10 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
         <motion.div
+          key={selection.locationCode}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
           className="space-y-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6"
         >
           <MapPin className="h-5 w-5 text-emerald-600" />
@@ -444,7 +446,13 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
         <div className="space-y-6">
           <WeatherMotionForecast data={data} loading={loading} error={error} locationLabel={selectedLabel} />
 
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <motion.div
+            key={`summary-${selection.locationCode}`}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+          >
             <div className="mb-4 flex items-center gap-3">
               <Navigation2 className="h-5 w-5 text-emerald-600" />
               <h3 className="text-lg font-semibold text-gray-800">Ringkasan lokasi</h3>
@@ -455,7 +463,13 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <motion.div
+            key={`info-${selection.locationCode}`}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+          >
             <h3 className="mb-4 text-lg font-semibold text-gray-800">Informasi Cuaca</h3>
             <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div className="rounded-xl bg-emerald-50 p-4">
