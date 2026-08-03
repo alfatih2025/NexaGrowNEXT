@@ -1,32 +1,39 @@
 export const ARDUINO_FORMULA_REFERENCE = `
 RUMUS ARDUINO NANO YANG WAJIB DIIKUTI:
-1) Soil moisture percent:
-   moisture = constrain(mapFloat(rawSoil, SOIL_RAW_DRY, SOIL_RAW_WET, 0, 100), 0, 100)
-   dengan kalibrasi default: SOIL_RAW_DRY = 830 dan SOIL_RAW_WET = 350
+void hitungSkor() {
+  if (isnan(suhu) || isnan(kelembapan) || isnan(tanah) || suhu == 0.0 || kelembapan == 0.0) return;
 
-2) Vapor Pressure Deficit (VPD):
-   svp = 0.6108 * exp((17.27 * suhu) / (suhu + 237.3))
-   avp = svp * (kelembapan_udara / 100)
-   vpd = svp - avp
+  float svp = 0.6108 * exp((17.27 * suhu) / (suhu + 237.3));
+  vdp = svp * (1.0 - (kelembapan / 100.0));
+  vdp = constrain(vdp, 0.4, 2.0);
 
-3) Soil score:
-   soilRange = atas - kritis
-   skortanah = constrain(((atas - k_tanah) * 50) / soilRange, 0, 50)
+  if (Atas - Kritis == 0) Kritis = Atas - 1;
 
-4) VPD score:
-   skorvdp = constrain(mapFloat(vpd, 0.4, 2.0, 0, 30), 0, 30)
+  skorTanah = ((Atas - tanah) * 50.0) / (Atas - Kritis);
+  skorTanah = constrain(skorTanah, 0, 50);
 
-5) Total score:
-   skortotal = skortanah + skorvdp - skorhujan
+  skorvdp = ((vdp - 0.4) * 30.0) / (2.0 - 0.4);
 
-6) Estimasi durasi siram:
-   durasi_total = round(max(0, 5 * (atas - k_tanah) / 100 * max(vpd, 0.5)))
+  skorHujan = (peluangHujan / 100.0) * 40.0;
+  skorHujan = constrain(skorHujan, 0, 40);
 
-7) Logika relay:
-   ON jika k_tanah <= kritis atau skortotal >= 60
-   OFF jika k_tanah >= atas atau hujan >= 5 atau suhu <= 20
+  skorInteraksi = ((skorTanah * skorvdp) / 50.0) * 0.667;
+  skorInteraksi = constrain(skorInteraksi, 0, 30);
 
-Saat menjawab, gunakan rumus di atas secara konsisten dan jangan mengganti konstanta tanpa menyebutkan bahwa itu adalah asumsi kalibrasi baru.
+  skorTotal = skorTanah + skorvdp + skorInteraksi - skorHujan;
+  durasiOff = durasiOn * (1.0 + ((Atas - tanah) / 100.0));
+}
+
+Rumus ini menghitung:
+- VPD (Vapor Pressure Deficit) dari suhu dan kelembapan
+- skorTanah: 0-50 berdasarkan posisi tanah antara Kritis-Atas
+- skorvdp: 0-30 berdasarkan VPD (0.4-2.0 kPa)
+- skorHujan: 0-40 berdasarkan peluang hujan BMKG
+- skorInteraksi: 0-30 berdasarkan interaksi tanah&VPD (faktor 0.667)
+- skorTotal: 0-100 (total skor akhir)
+- durasiOff: jeda pematian pompa berdasarkan kebutuhan air
+
+Gunakan rumus di atas secara konsisten saat menjelaskan perhitungan.
 `.trim();
 
 export function getArduinoFormulaReference(): string {
