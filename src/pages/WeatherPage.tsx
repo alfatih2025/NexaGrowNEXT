@@ -75,7 +75,8 @@ function persistStoredSelection(code: string) {
 }
 
 function resolveSelectionFromCode(code: string): WeatherSelection {
-  const location = getWeatherLocationByCode(code) ?? getWeatherLocationByCode(DEFAULT_WEATHER_LOCATION_CODE);
+  const normalizedCode = normalizeWeatherLocationCode(code);
+  const location = getWeatherLocationByCode(normalizedCode) ?? getWeatherLocationByCode(DEFAULT_WEATHER_LOCATION_CODE);
 
   if (!location) {
     return {
@@ -92,7 +93,7 @@ function resolveSelectionFromCode(code: string): WeatherSelection {
     province: location.province,
     city: location.city,
     district: location.district || (location.level === 'district' ? location.label : ''),
-    locationCode: location.code,
+    locationCode: location.code || normalizedCode,
   };
 }
 
@@ -144,7 +145,7 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
   const lastSyncedRemoteLocation = useRef<string | null>(null);
 
   useEffect(() => {
-    const nextRemote = settings?.location || locationCode;
+    const nextRemote = normalizeWeatherLocationCode(settings?.location || locationCode || '');
     if (nextRemote && nextRemote !== lastSyncedRemoteLocation.current) {
       console.log(`[WeatherPage] Syncing location from ${lastSyncedRemoteLocation.current} to ${nextRemote}`);
       lastSyncedRemoteLocation.current = nextRemote;

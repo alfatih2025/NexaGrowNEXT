@@ -144,22 +144,24 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
-    const urlStr = req.url || '';
-    let queryLocation = req.query?.location || req.query?.adm4;
-    
-    // Fallback manual URL parsing if Vercel rewrites stripped req.query
-    if (!queryLocation && urlStr.includes('?')) {
-      try {
-        const url = new URL(urlStr, `https://${req.headers.host || 'api.example.com'}`);
-        queryLocation = url.searchParams.get('location') || url.searchParams.get('adm4');
-      } catch {
-        // ignore URL parsing errors
+      const urlStr = String(req.url || '');
+      let queryLocation = req.query?.location || req.query?.adm4;
+      if (Array.isArray(queryLocation)) {
+        queryLocation = queryLocation[0];
       }
-    }
 
-    const locationCode = queryLocation || DEFAULT_LOCATION_CODE;
-    const normalizedCode = resolveLocationCode(locationCode);
-    
+      // Fallback manual URL parsing if req.query is unavailable or stripped.
+      if (!queryLocation && urlStr.includes('?')) {
+        try {
+          const url = new URL(urlStr, `http://${req.headers.host || 'localhost'}`);
+          queryLocation = url.searchParams.get('location') || url.searchParams.get('adm4');
+        } catch {
+          // ignore URL parsing errors
+        }
+      }
+
+      const locationCode = String(queryLocation || DEFAULT_LOCATION_CODE).trim();
+      const normalizedCode = resolveLocationCode(locationCode);
     const bmkgUrl = resolveBmkgUrl(normalizedCode);
     
     let bmkgData = null;
