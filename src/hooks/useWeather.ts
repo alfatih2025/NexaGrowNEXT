@@ -21,6 +21,11 @@ export interface WeatherData {
   }>;
 }
 
+type WeatherCacheRecord = {
+  createdAt: number;
+  weather: WeatherData;
+};
+
 const BMKG_URL = import.meta.env.VITE_BMKG_URL;
 const WEATHER_CACHE_PREFIX = 'nexagrow_weather_cache_v3';
 
@@ -40,16 +45,15 @@ function readWeatherCache(locationCode: string) {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') return null;
 
-    const cached = parsed as WeatherData;
+    const cacheRecord = parsed as WeatherCacheRecord;
+    if (!cacheRecord.weather || typeof cacheRecord.createdAt !== 'number') return null;
+
     const now = Date.now();
-    
-    // Invalidate cache if older than 5 minutes
-    // Since WeatherData doesn't have created_at, use approximate check
-    if (now - 5 * 60 * 1000 > now) {
+    if (now - cacheRecord.createdAt > 5 * 60 * 1000) {
       return null;
     }
-    
-    return cached;
+
+    return cacheRecord.weather;
   } catch {
     return null;
   }
@@ -97,7 +101,12 @@ function writeWeatherCache(locationCode: string, data: WeatherData) {
 
   try {
     const pathLabel = resolveWeatherLocationPath(locationCode);
-    window.localStorage.setItem(getWeatherCacheKey(locationCode), JSON.stringify(normalizeWeatherData(locationCode, data, data.location, pathLabel)));
+    const normalizedWeather = normalizeWeatherData(locationCode, data, data.location, pathLabel);
+    const cacheRecord: WeatherCacheRecord = {
+      createdAt: Date.now(),
+      weather: normalizedWeather,
+    };
+    window.localStorage.setItem(getWeatherCacheKey(locationCode), JSON.stringify(cacheRecord));
   } catch {
     // ignore cache write failures
   }
@@ -142,6 +151,9 @@ export function useWeather(locationCode?: string) {
           return;
         }
 
+        const apiErrorText = await response.text();
+        const apiError = `Weather API failed (${response.status}): ${apiErrorText}`;
+
         if (BMKG_URL) {
           const bmkgUrl = buildBmkgWeatherUrl(BMKG_URL, normalizedLocation);
           const bmkgRes = await fetch(bmkgUrl, { signal: controller.signal });
@@ -155,17 +167,23 @@ export function useWeather(locationCode?: string) {
             setError(null);
             return;
           }
+
+          const bmkgErrorText = await bmkgRes.text();
+          setError(`BMKG fallback failed (${bmkgRes.status}): ${bmkgErrorText}`);
+          const fallbackData = normalizeWeatherData(normalizedLocation, cachedWeather ?? staticFallback, fallbackLabel, pathLabel);
+          setData(fallbackData);
+          return;
         }
 
+        setError(apiError);
         const fallbackData = normalizeWeatherData(normalizedLocation, cachedWeather ?? staticFallback, fallbackLabel, pathLabel);
         setData(fallbackData);
-        setError(null);
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') return;
 
         const fallbackData = normalizeWeatherData(normalizedLocation, cachedWeather ?? staticFallback, fallbackLabel, pathLabel);
         setData(fallbackData);
-        setError(null);
+        setError(err instanceof Error ? err.message : 'Gagal memuat cuaca');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
