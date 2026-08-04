@@ -37,6 +37,10 @@ export const WEATHER_LOCATION_GROUPS: WeatherLocationGroup[] = [
 
 export const DEFAULT_WEATHER_LOCATION_CODE = '33.74.07.1010';
 
+const LEGACY_WEATHER_LOCATION_CODE_MAP: Record<string, string> = {
+  '33.22.07': '33.74.01.1001',
+};
+
 const ADM4_PATTERN = /^\d{2}(?:\.\d{2}){1,2}(?:\.\d{1,4})?$/;
 const SEMARANG_VILLAGE_PATTERN = /^33\.74\.\d{2}\.\d{4}$/;
 
@@ -104,6 +108,9 @@ export function isValidWeatherLocationCode(value: string) {
 
 export function normalizeWeatherLocationCode(value: unknown) {
   const raw = normalizeText(value);
+  if (raw && LEGACY_WEATHER_LOCATION_CODE_MAP[raw]) {
+    return LEGACY_WEATHER_LOCATION_CODE_MAP[raw];
+  }
   return isValidWeatherLocationCode(raw) ? raw : DEFAULT_WEATHER_LOCATION_CODE;
 }
 

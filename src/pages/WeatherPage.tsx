@@ -15,6 +15,7 @@ import {
   getWeatherLocationProvinces,
   getWeatherLocationVillages,
   getWeatherLocationsByCategory,
+  normalizeWeatherLocationCode,
   resolveWeatherLocationPath,
 } from '../lib/weatherLocations';
 import type { WeatherLocationCategory } from '../types/weather';
@@ -132,7 +133,7 @@ function resolveSelection(next: Partial<WeatherSelection>, previous: WeatherSele
 }
 
 export function WeatherPage({ locationCode, settings, updateSettings }: WeatherPageProps) {
-  const initialCode = locationCode || settings?.location || readStoredSelection() || DEFAULT_WEATHER_LOCATION_CODE;
+    const initialCode = normalizeWeatherLocationCode(locationCode || settings?.location || readStoredSelection() || DEFAULT_WEATHER_LOCATION_CODE);
   const [selection, setSelection] = useState<WeatherSelection>(resolveSelectionFromCode(initialCode));
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);

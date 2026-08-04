@@ -281,7 +281,7 @@ export const SEMARANG_KECAMATAN: WeatherLocation[] = [
     ready: true,
   },
   {
-    code: '33.22.07',
+    code: '33.74.01.1001',
     label: 'Miroto',
     province: 'Jawa Tengah',
     city: 'Kota Semarang',
