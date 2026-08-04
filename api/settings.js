@@ -104,6 +104,19 @@ function normalizeSettings(input = {}) {
   };
 }
 
+const SETTINGS_DB_COLUMNS = new Set([
+  'id',
+  'plant_phase',
+  'crop_mode',
+  'location',
+]);
+
+function filterSettingsForDatabase(input = {}) {
+  return Object.fromEntries(
+    Object.entries(input).filter(([key]) => SETTINGS_DB_COLUMNS.has(key)),
+  );
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
@@ -123,13 +136,13 @@ export default async function handler(req, res) {
       if (error) {
         if (error.code === 'PGRST116') {
           // No rows found, safe to return default
-          return res.status(200).json(DEFAULT_SETTINGS);
+          return res.status(200).json(normalizeSettings(DEFAULT_SETTINGS));
         }
         // Any other error (connection, etc) should fail so frontend uses localStorage
         return res.status(500).json({ error: error.message });
       }
 
-      return res.status(200).json(data || DEFAULT_SETTINGS);
+      return res.status(200).json(normalizeSettings(data || DEFAULT_SETTINGS));
     }
 
     if (req.method === 'PUT' || req.method === 'POST') {
@@ -137,6 +150,7 @@ export default async function handler(req, res) {
 
       const updates = req.body || {};
       const payload = normalizeSettings(updates);
+      const dbPayload = filterSettingsForDatabase(payload);
 
       if (!supabase) {
         console.warn('[api/settings] Supabase not configured; returning normalized payload locally');
@@ -145,7 +159,7 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabase
         .from('settings')
-        .upsert(payload)
+        .upsert(dbPayload)
         .select()
         .single();
 
@@ -157,7 +171,7 @@ export default async function handler(req, res) {
         details: updates,
       }).catch(() => {});
 
-      return res.status(200).json(data || payload);
+      return res.status(200).json(normalizeSettings(data || payload));
     }
 
     res.status(405).json({ error: 'Method not allowed' });
