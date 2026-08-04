@@ -149,33 +149,40 @@ export default async function handler(req, res) {
     
     // Fallback manual URL parsing if Vercel rewrites stripped req.query
     if (!queryLocation && urlStr.includes('?')) {
-      const searchParams = new URLSearchParams(urlStr.split('?')[1]);
-      queryLocation = searchParams.get('location') || searchParams.get('adm4');
+      try {
+        const url = new URL(urlStr, `https://${req.headers.host || 'api.example.com'}`);
+        queryLocation = url.searchParams.get('location') || url.searchParams.get('adm4');
+      } catch {
+        // ignore URL parsing errors
+      }
     }
 
     const locationCode = queryLocation || DEFAULT_LOCATION_CODE;
     const normalizedCode = resolveLocationCode(locationCode);
-    const bmkgUrls = [resolveBmkgUrl(normalizedCode), `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${encodeURIComponent(normalizedCode)}`];
+    
+    const bmkgUrl = resolveBmkgUrl(normalizedCode);
+    
     let bmkgData = null;
+    let lastError = null;
 
-    for (const bmkgUrl of bmkgUrls) {
-      try {
-        const response = await fetch(bmkgUrl, {
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'Mozilla/5.0',
-          },
-        });
-        if (!response.ok) continue;
+    try {
+      const response = await fetch(bmkgUrl, {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Mozilla/5.0',
+        },
+        next: { revalidate: 0 }, // Disable cache for Vercel
+      });
+      if (!response.ok) {
+        lastError = `HTTP ${response.status}`;
+      } else {
         bmkgData = await response.json();
-        break;
-      } catch {
-        // try next fallback URL
       }
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
     }
 
     if (!bmkgData) {
-      console.error(`Failed to fetch BMKG data for ${normalizedCode}`);
       return res.status(502).json({
         error: 'BMKG API unavailable',
         location_code: normalizedCode,
@@ -196,7 +203,11 @@ export default async function handler(req, res) {
 
     return res.status(200).json(weatherData);
   } catch (err) {
-    console.error('Weather API error:', err);
-    return res.status(200).json(DEFAULT_WEATHER);
+    console.error('[Weather API] Unexpected error:', err);
+    return res.status(500).json({
+      error: 'Internal server error',
+      location_code: normalizedCode,
+      location: resolveLocationLabel(normalizedCode)
+    });
   }
 }

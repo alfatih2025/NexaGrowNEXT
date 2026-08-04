@@ -145,8 +145,13 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
   useEffect(() => {
     const nextRemote = settings?.location || locationCode;
     if (nextRemote && nextRemote !== lastSyncedRemoteLocation.current) {
+      console.log(`[WeatherPage] Syncing location from ${lastSyncedRemoteLocation.current} to ${nextRemote}`);
       lastSyncedRemoteLocation.current = nextRemote;
       setSelection(resolveSelectionFromCode(nextRemote));
+    } else if (!nextRemote && lastSyncedRemoteLocation.current !== DEFAULT_WEATHER_LOCATION_CODE) {
+      // Reset to default if no location provided
+      lastSyncedRemoteLocation.current = DEFAULT_WEATHER_LOCATION_CODE;
+      setSelection(resolveSelectionFromCode(DEFAULT_WEATHER_LOCATION_CODE));
     }
   }, [locationCode, settings?.location]);
 
@@ -245,7 +250,8 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
     setSaveState('saving');
     setSaveError(null);
     try {
-      const normalized = await updateSettings({ location: weatherCode });
+      const payload: Partial<Settings> = { location: weatherCode };
+      const normalized = await updateSettings(payload);
       persistStoredSelection(normalized.location);
       setSelection((prev) => ({ ...prev, locationCode: normalized.location }));
 

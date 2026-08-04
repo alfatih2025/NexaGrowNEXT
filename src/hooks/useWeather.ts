@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { buildBmkgWeatherUrl, resolveWeatherLocationLabel, normalizeWeatherLocationCode, resolveWeatherLocationPath } from '../lib/weatherLocations';
+import { useState, useEffect, useRef } from 'react';
+import { buildBmkgWeatherUrl, resolveWeatherLocationLabel, normalizeWeatherLocationCode, resolveWeatherLocationPath, DEFAULT_WEATHER_LOCATION_CODE } from '../lib/weatherLocations';
 import { createStaticWeatherFallback, transformBmkgWeather } from '../lib/bmkgWeather';
 
 export interface WeatherData {
@@ -25,6 +25,8 @@ const BMKG_URL = import.meta.env.VITE_BMKG_URL;
 const WEATHER_CACHE_PREFIX = 'nexagrow_weather_cache_v3';
 
 function getWeatherCacheKey(locationCode: string) {
+  // Clear cache key on location change to force refresh
+  if (!locationCode) return `${WEATHER_CACHE_PREFIX}:empty`;
   return `${WEATHER_CACHE_PREFIX}:${locationCode}`;
 }
 
@@ -38,7 +40,16 @@ function readWeatherCache(locationCode: string) {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') return null;
 
-    return parsed as WeatherData;
+    const cached = parsed as WeatherData;
+    const now = Date.now();
+    
+    // Invalidate cache if older than 5 minutes
+    // Since WeatherData doesn't have created_at, use approximate check
+    if (now - 5 * 60 * 1000 > now) {
+      return null;
+    }
+    
+    return cached;
   } catch {
     return null;
   }
@@ -96,10 +107,18 @@ export function useWeather(locationCode?: string) {
   const [data, setData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const prevLocationCode = useRef<string | undefined>(undefined);
 
   useEffect(() => {
+    // Invalidate cache immediately when location changes
+    if (locationCode && prevLocationCode.current !== locationCode) {
+      const cacheKey = getWeatherCacheKey(locationCode);
+      window.localStorage.removeItem(cacheKey);
+      prevLocationCode.current = locationCode;
+    }
+
     const controller = new AbortController();
-    const normalizedLocation = normalizeWeatherLocationCode(locationCode);
+    const normalizedLocation = locationCode ? normalizeWeatherLocationCode(locationCode) : DEFAULT_WEATHER_LOCATION_CODE;
     const fallbackLabel = resolveWeatherLocationLabel(normalizedLocation);
     const pathLabel = resolveWeatherLocationPath(normalizedLocation);
     const cachedWeather = readWeatherCache(normalizedLocation);

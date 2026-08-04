@@ -50,7 +50,7 @@ const SUBSCRIBE_TOPICS = [
   TOPIC_SYSTEM_FAULT,
 ];
 
-const ESP_ONLINE_TIMEOUT_MS = 15_000;
+const ESP_ONLINE_TIMEOUT_MS = 60_000;
 const HISTORY_LIMIT = 120;
 const SETTINGS_EVENT = 'nexagrow:settings-updated';
 
@@ -191,23 +191,37 @@ let sensorHistory: MqttSensorSnapshot[] = [];
 let reconnectTimer: number | null = null;
 
 function emit() {
+  const now = Date.now();
+  
+  // ESP32 online jika: ada data dalam 60 detik, ATAU ada espLastSeenAt yang valid
+  let espOnline = false;
   if (snapshot.espOnline && snapshot.espLastSeenAt) {
-    const elapsed = Date.now() - new Date(snapshot.espLastSeenAt).getTime();
-    if (elapsed > ESP_ONLINE_TIMEOUT_MS) {
-      snapshot = { ...snapshot, espOnline: false };
-      if (sensorSnapshot) {
-        sensorSnapshot = { ...sensorSnapshot, pump_status: false, led_status: false };
-      }
-    }
+    const elapsed = now - new Date(snapshot.espLastSeenAt).getTime();
+    espOnline = elapsed <= ESP_ONLINE_TIMEOUT_MS;
+  }
+  
+  // Update espOnline jika sudah off tapi masih punya lastSeenAt yang valid
+  if (!snapshot.espOnline && espOnline) {
+    snapshot = { ...snapshot, espOnline: true };
   }
 
-  const espOnline = snapshot.espOnline;
-  const systemOnline = snapshot.browserOnline && snapshot.mqttConnected && espOnline;
+  const browserOnline = snapshot.browserOnline;
+  const mqttConnected = snapshot.mqttConnected;
+  
+  // System online jika web + mqtt aktif (ESP32 sensor timeout tidak membuat web offline)
+  const systemOnline = browserOnline && mqttConnected;
+  
   const reasonParts: string[] = [];
 
-  if (!snapshot.browserOnline) reasonParts.push('Web offline');
-  if (!snapshot.mqttConnected) reasonParts.push(snapshot.mqttError || 'MQTT belum terhubung');
-  if (!espOnline) reasonParts.push('ESP32 offline');
+  if (!browserOnline) reasonParts.push('Web offline');
+  if (!mqttConnected) reasonParts.push(snapshot.mqttError || 'MQTT belum terhubung');
+  
+  // ESP32 offline hanya dijadikan informasi, tidak membuat sistem offline
+  const espLastSeen = snapshot.espLastSeenAt ? new Date(snapshot.espLastSeenAt) : null;
+  const espLastSeenMs = espLastSeen ? now - espLastSeen.getTime() : null;
+  if (!espOnline && espLastSeenMs !== null) {
+    reasonParts.push(`Data sensor: ${espLastSeenMs > 60000 ? 'lama' : 'terbaru'}`);
+  }
 
   snapshot = {
     ...snapshot,
@@ -215,7 +229,7 @@ function emit() {
     systemOnline,
     systemLabel: systemOnline ? 'Sistem Online' : 'Sistem Offline',
     systemDetail: systemOnline
-      ? 'Web, MQTT, dan ESP32 aktif'
+      ? 'Web & MQTT aktif' + (espOnline ? ', ESP32 aktif' : ', menunggu data sensor')
       : reasonParts.filter(Boolean).join(' • ') || 'Sistem belum siap',
     sensorSnapshot,
   };

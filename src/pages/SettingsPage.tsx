@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, User, Sprout, Wifi, CalendarDays, SlidersHorizontal, Droplets, Thermometer, MapPinned } from 'lucide-react';
-import { useSettings, Settings as SettingsType } from '../hooks/useSettings';
+import { useSettings, Settings as SettingsType } from '../context/SettingsContext';
 import { useControl } from '../hooks/useControl';
 import { useWeather } from '../hooks/useWeather';
 import { getPhaseDefaults, getPlantPhaseProfile, formatRange } from '../lib/plantPhase';
