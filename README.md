@@ -675,6 +675,12 @@ lib_deps =
 | `MQTT_PORT` | Port MQTT (8883) |
 | `MQTT_USERNAME` | Username MQTT |
 | `MQTT_PASSWORD` | Password MQTT |
+| `VITE_SUPABASE_URL` | URL Supabase project |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key untuk client-side access |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key untuk backend/API writes |
+| `VITE_API_AUTH_TOKEN` | Token internal untuk API route authentication |
+
+> Catatan: `SUPABASE_SERVICE_ROLE_KEY` harus disimpan sebagai secret di environment dan hanya dipakai oleh server/API. Jangan letakkan di file JavaScript/klien yang bisa diakses browser.
 
 ### 9.4 NVS Preferences (Runtime)
 
