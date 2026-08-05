@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, User, Sprout, Wifi, CalendarDays, SlidersHorizontal, Droplets, Thermometer, MapPinned } from 'lucide-react';
-import { useSettings, Settings as SettingsType } from '../context/SettingsContext';
+import { useSettings, Settings as SettingsType } from '../hooks/useSettings';
 import { useControl } from '../hooks/useControl';
 import { useWeather } from '../hooks/useWeather';
 import { getPhaseDefaults, getPlantPhaseProfile, formatRange } from '../lib/plantPhase';
@@ -67,58 +67,69 @@ export function SettingsPage() {
   const handleSave = async () => {
     setSaveStatus('saving');
     setSyncError(null);
+
+    // Bangun payload dari formData dengan fallback ke settings yang ada
+    const rawWateringTime = formData.watering_time || settings?.watering_time || '06:00';
+    // Bug #3 Fix: Validasi format HH:MM sebelum dipakai — jika tidak valid, fallback ke '06:00'
+    const safeWateringTime = /^\d{2}:\d{2}$/.test(rawWateringTime) ? rawWateringTime : '06:00';
+
+    const payload: Partial<SettingsType> = {
+      ...formData,
+      plant_phase: currentPhase,
+      crop_mode: currentPhase,
+      location: String(formData.location ?? settings?.location ?? '').trim() || settings?.location || '',
+      watering_time: safeWateringTime,
+      watering_duration: Number(formData.watering_duration ?? settings?.watering_duration ?? 10),
+      watering_enabled: Boolean(formData.watering_enabled ?? settings?.watering_enabled ?? true),
+      temp_threshold_low: Number(formData.temp_threshold_low ?? settings?.temp_threshold_low ?? phaseProfile.tempRange[0]),
+      temp_threshold_high: Number(formData.temp_threshold_high ?? settings?.temp_threshold_high ?? phaseProfile.tempRange[1]),
+      humidity_threshold_low: Number(formData.humidity_threshold_low ?? settings?.humidity_threshold_low ?? phaseProfile.humidityRange[0]),
+      humidity_threshold_high: Number(formData.humidity_threshold_high ?? settings?.humidity_threshold_high ?? phaseProfile.humidityRange[1]),
+      soil_threshold_low: Number(formData.soil_threshold_low ?? settings?.soil_threshold_low ?? phaseProfile.soilRange[0]),
+      soil_threshold_high: Number(formData.soil_threshold_high ?? settings?.soil_threshold_high ?? phaseProfile.soilRange[1]),
+      soil_threshold_critical: Number(formData.soil_threshold_critical ?? settings?.soil_threshold_critical ?? phaseProfile.criticalSoil),
+    };
+
+    // Bug #2 Fix: Simpan ke API database dulu (tapi jangan blokir pengiriman MQTT jika gagal).
+    // updateSettings() dari hooks/useSettings tidak pernah throw — jika API gagal,
+    // ia return payload lokal sehingga normalized selalu valid.
+    let normalized: SettingsType;
     try {
-      const payload: Partial<SettingsType> = {
-        ...formData,
-        plant_phase: currentPhase,
-        crop_mode: currentPhase,
-        location: String(formData.location ?? settings?.location ?? '').trim() || settings?.location || '',
+      normalized = await updateSettings(payload);
+    } catch {
+      // Fallback ke payload lokal agar MQTT tetap bisa dikirim walau API bermasalah
+      normalized = payload as SettingsType;
+    }
 
-        watering_time: formData.watering_time || settings?.watering_time || '06:00',
-        watering_duration: Number(formData.watering_duration ?? settings?.watering_duration ?? 10),
-        watering_enabled: Boolean(formData.watering_enabled ?? settings?.watering_enabled ?? true),
-        temp_threshold_low: Number(formData.temp_threshold_low ?? settings?.temp_threshold_low ?? phaseProfile.tempRange[0]),
-        temp_threshold_high: Number(formData.temp_threshold_high ?? settings?.temp_threshold_high ?? phaseProfile.tempRange[1]),
-        humidity_threshold_low: Number(formData.humidity_threshold_low ?? settings?.humidity_threshold_low ?? phaseProfile.humidityRange[0]),
-        humidity_threshold_high: Number(formData.humidity_threshold_high ?? settings?.humidity_threshold_high ?? phaseProfile.humidityRange[1]),
-        soil_threshold_low: Number(formData.soil_threshold_low ?? settings?.soil_threshold_low ?? phaseProfile.soilRange[0]),
-        soil_threshold_high: Number(formData.soil_threshold_high ?? settings?.soil_threshold_high ?? phaseProfile.soilRange[1]),
-        soil_threshold_critical: Number(formData.soil_threshold_critical ?? settings?.soil_threshold_critical ?? phaseProfile.criticalSoil),
-      };
+    // DEBUG: pastikan payload threshold valid dan benar-benar dikirim ke MQTT.
+    // Buka DevTools Console di browser untuk melihat output ini.
+    console.log('[SettingsPage] settings_sync payload', {
+      soil_threshold_low: normalized.soil_threshold_low,
+      soil_threshold_high: normalized.soil_threshold_high,
+      soil_threshold_critical: normalized.soil_threshold_critical,
+      watering_time: normalized.watering_time,
+      watering_duration: normalized.watering_duration,
+      watering_enabled: normalized.watering_enabled,
+      plant_phase: normalized.plant_phase,
+    });
 
-      const normalized = await updateSettings(payload);
+    const weatherForecastSummary = weatherData?.forecast?.length
+      ? weatherData.forecast
+          .slice(0, 5)
+          .map((item) => {
+            const date = new Date(item.datetime);
+            const formatted = Number.isFinite(date.getTime())
+              ? date.toLocaleString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+              : String(item.datetime);
+            return `${formatted}: ${item.weather}, ${item.temperature}°C, peluang hujan ${item.rain_chance}%`;
+          })
+          .join(' | ')
+      : null;
 
-      // DEBUG: pastikan payload threshold valid dan benar-benar dikirim ke MQTT.
-      // Buka DevTools Console di browser untuk melihat output ini.
-      console.log('[SettingsPage] settings_sync payload', {
-        soil_threshold_low: normalized.soil_threshold_low,
-        soil_threshold_high: normalized.soil_threshold_high,
-        soil_threshold_critical: normalized.soil_threshold_critical,
-        watering_time: normalized.watering_time,
-        watering_duration: normalized.watering_duration,
-        watering_enabled: normalized.watering_enabled,
-        plant_phase: normalized.plant_phase,
-      });
-
-
-
-      const weatherForecastSummary = weatherData?.forecast?.length
-        ? weatherData.forecast
-            .slice(0, 5)
-            .map((item) => {
-              const date = new Date(item.datetime);
-              const formatted = Number.isFinite(date.getTime())
-                ? date.toLocaleString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-                : String(item.datetime);
-              return `${formatted}: ${item.weather}, ${item.temperature}°C, peluang hujan ${item.rain_chance}%`;
-            })
-            .join(' | ')
-        : null;
-
-      // PENTING: tidak lagi di-race lawan timeout arbitrer, dan hasilnya
-      // tidak lagi dibuang. sendCommand() sendiri sudah punya timeout internal
-      // (nunggu koneksi MQTT max ~10 detik) dan SELALU resolve dengan bentuk
-      // { success, error } — jadi wajib dicek di sini, bukan cuma dipanggil.
+    try {
+      // Bug #2 Fix: Pengiriman MQTT ke ESP32 SELALU dijalankan, tidak bergantung pada
+      // keberhasilan API database di atas. sendCommand() sudah punya timeout internal
+      // (~10 detik) dan SELALU resolve dengan { success, error } — tidak pernah throw.
       const [settingsSyncResult, scheduleSetResult] = await Promise.all([
         sendCommand('settings_sync', undefined, {
           plant_phase: normalized.plant_phase,
@@ -188,7 +199,7 @@ export function SettingsPage() {
     } catch (err) {
       setIsDirty(false);
       setSaveStatus('idle');
-      setSyncError(err instanceof Error ? err.message : 'Gagal menyimpan pengaturan');
+      setSyncError(err instanceof Error ? err.message : 'Gagal mengirim perintah ke ESP32');
     }
   };
 

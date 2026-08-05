@@ -80,7 +80,9 @@ function resolveControlCommand(action: string, duration?: number, data?: Record<
       const weatherCondition = String(data?.weather_condition ?? '').trim();
       const weatherTemperature = Number(data?.weather_temperature ?? 0);
       const weatherRainChance = Number(data?.weather_rain_chance ?? data?.rain_chance ?? 0);
-      const wateringTime = String(data?.watering_time ?? '').trim();
+      const rawWt = String(data?.watering_time ?? '').trim();
+      // Bug #4 Fix: Validasi format HH:MM sebelum dikirim via settings_sync.
+      const wateringTime = /^\d{2}:\d{2}$/.test(rawWt) ? rawWt : '06:00';
       const wateringDuration = Number(data?.watering_duration ?? 10);
 
       return {
@@ -126,7 +128,10 @@ function resolveControlCommand(action: string, duration?: number, data?: Record<
     case 'schedule_set':
       {
         const enabled = Boolean(data?.schedule_enabled ?? data?.watering_enabled ?? true);
-        const wateringTime = String(data?.watering_time ?? '').trim();
+        const rawWateringTime = String(data?.watering_time ?? '').trim();
+        // Bug #4 Fix: Validasi format HH:MM sebelum dikirim ke ESP32.
+        // Jika kosong atau format salah, fallback ke '06:00' agar jadwal tetap valid.
+        const wateringTime = /^\d{2}:\d{2}$/.test(rawWateringTime) ? rawWateringTime : '06:00';
         const wateringDuration = Number(data?.watering_duration ?? 10);
         return {
           topic: 'sproutai/schedule/cmd',
