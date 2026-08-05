@@ -52,7 +52,11 @@ const SUBSCRIBE_TOPICS = [
 
 const ESP_ONLINE_TIMEOUT_MS = 60_000;
 const HISTORY_LIMIT = 120;
+const SENSOR_PERSIST_INTERVAL_MS = 20_000;
 const SETTINGS_EVENT = 'nexagrow:settings-updated';
+
+let lastPersistedSensorJson: string | null = null;
+let lastPersistedSensorAt = 0;
 
 export interface MqttSensorSnapshot {
   device_id: string | null;
@@ -316,6 +320,61 @@ export function parseMqttJsonPayload(payload: string): Record<string, unknown> |
   }
 }
 
+async function persistSensorDataToApi(payload: string, parsed: SensorDelta) {
+  if (typeof window === 'undefined') return;
+
+  const now = Date.now();
+  const normalized = JSON.stringify({
+    device_id: parsed.device_id ?? undefined,
+    temperature: parsed.temperature ?? undefined,
+    humidity: parsed.humidity ?? undefined,
+    soil_moisture: parsed.soil_moisture ?? undefined,
+    rain: parsed.rain ?? undefined,
+    score: parsed.score ?? undefined,
+    soil_score: parsed.soil_score ?? undefined,
+    vdp_score: parsed.vdp_score ?? undefined,
+    rain_score: parsed.rain_score ?? undefined,
+    vpd: parsed.vpd ?? undefined,
+    duration_estimate: parsed.duration_estimate ?? undefined,
+    pump_status: parsed.pump_status ?? undefined,
+    led_status: parsed.led_status ?? undefined,
+    device_mode: parsed.device_mode ?? undefined,
+    wifi_status: parsed.wifi_status ?? undefined,
+    threshold_kritis: parsed.threshold_kritis ?? undefined,
+    threshold_atas: parsed.threshold_atas ?? undefined,
+    threshold_bawah: parsed.threshold_bawah ?? undefined,
+    watering_time: parsed.watering_time ?? undefined,
+    watering_duration: parsed.watering_duration ?? undefined,
+    schedule_enabled: parsed.schedule_enabled ?? undefined,
+    formula_name: parsed.formula_name ?? undefined,
+    formula_soil: parsed.formula_soil ?? undefined,
+    formula_vpd: parsed.formula_vpd ?? undefined,
+    formula_score: parsed.formula_score ?? undefined,
+    soil_raw_dry: parsed.soil_raw_dry ?? undefined,
+    dht_error: parsed.dht_error ?? undefined,
+    soil_error: parsed.soil_error ?? undefined,
+  });
+
+  if (lastPersistedSensorJson === normalized && now - lastPersistedSensorAt < SENSOR_PERSIST_INTERVAL_MS) {
+    return;
+  }
+
+  lastPersistedSensorJson = normalized;
+  lastPersistedSensorAt = now;
+
+  try {
+    await fetch('/api/sensor', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: normalized,
+    });
+  } catch (err) {
+    console.warn('[SENSOR PERSIST] Gagal simpan ke API sensor:', err);
+  }
+}
+
 function consumePendingMqttAcks(topic: string, payload: string) {
   for (const waiter of Array.from(pendingMqttAcks)) {
     try {
@@ -539,6 +598,7 @@ function updateFromTopic(topic: string, payload: string) {
         lastPayload: payload,
         lastMessageAt: now,
       });
+      persistSensorDataToApi(payload, parsed).catch(() => {});
     }
     return;
   }
