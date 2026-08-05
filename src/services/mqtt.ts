@@ -50,7 +50,7 @@ const SUBSCRIBE_TOPICS = [
   TOPIC_SYSTEM_FAULT,
 ];
 
-const ESP_ONLINE_TIMEOUT_MS = 5_000; // 5 detik sebelum ESP32 dianggap offline
+const ESP_ONLINE_TIMEOUT_MS = 15_000; // 15 detik sebelum ESP32 dianggap offline
 const HISTORY_LIMIT = 120;
 const SENSOR_PERSIST_INTERVAL_MS = 30_000;
 const SETTINGS_EVENT = 'nexagrow:settings-updated';
@@ -224,7 +224,7 @@ function emit() {
   const espLastSeenMs = espLastSeen ? now - espLastSeen.getTime() : null;
   if (!espOnline) {
     if (espLastSeenMs === null) {
-      reasonParts.push('ESP32 belum pernah terhubung');
+      reasonParts.push('ESP32 status belum diterima');
     } else {
       reasonParts.push(`ESP32 offline • ${Math.floor(espLastSeenMs / 1000)} detik lalu`);
     }
@@ -279,11 +279,9 @@ function setSensorSnapshot(next: SensorDelta, sourceTopic: string, force = false
   if (!changed) {
     snapshot = {
       ...snapshot,
-      espOnline: true,
       lastTopic: sourceTopic,
       lastPayload: null,
       lastMessageAt: now,
-      espLastSeenAt: now,
     };
     emit();
     return;
@@ -293,11 +291,9 @@ function setSensorSnapshot(next: SensorDelta, sourceTopic: string, force = false
   pushHistory(merged);
   snapshot = {
     ...snapshot,
-    espOnline: true,
     lastTopic: sourceTopic,
     lastPayload: JSON.stringify(merged),
     lastMessageAt: now,
-    espLastSeenAt: now,
     sensorSnapshot,
   };
   emit();
@@ -574,7 +570,7 @@ function updateFromTopic(topic: string, payload: string) {
   const now = new Date().toISOString();
   const trimmed = payload.trim();
 
-  if (topic === SYSTEM_STATUS_TOPIC || topic === DEVICE_STATUS_TOPIC) {
+  if (topic === DEVICE_STATUS_TOPIC) {
     const parsedStatus = parseStatusValue(trimmed);
     const isOnline = parsedStatus ?? true;
     
@@ -584,7 +580,16 @@ function updateFromTopic(topic: string, payload: string) {
     
     setSnapshot({
       espOnline: isOnline,
-      espLastSeenAt: isOnline ? now : null,
+      espLastSeenAt: now,
+      lastTopic: topic,
+      lastPayload: payload,
+      lastMessageAt: now,
+    });
+    return;
+  }
+
+  if (topic === SYSTEM_STATUS_TOPIC) {
+    setSnapshot({
       lastTopic: topic,
       lastPayload: payload,
       lastMessageAt: now,
@@ -687,7 +692,6 @@ function updateFromTopic(topic: string, payload: string) {
       lastTopic: topic,
       lastPayload: payload,
       lastMessageAt: now,
-      espLastSeenAt: now,
     });
   }
 }
