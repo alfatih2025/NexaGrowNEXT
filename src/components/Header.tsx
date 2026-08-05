@@ -26,7 +26,7 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
   const { alerts, unreadCount, markAsRead, fetchAlerts } = useAlerts();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const isOnline = mqttStatus.systemOnline;
+  const isOnline = mqttStatus.systemOnline && mqttStatus.espOnline;
   useEffect(() => {
     const onDown = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
