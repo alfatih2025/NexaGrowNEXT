@@ -173,7 +173,7 @@ const getInitialSensorData = () => {
   return mergeSensorData(null, isOnline ? getSensorSnapshot() : null);
 };
 
-export function useSensorData(pollInterval = 3000) {
+export function useSensorData(pollInterval = 1000) {
   const [data, setData] = useState<SensorData | null>(getInitialSensorData);
   const [history, setHistory] = useState<SensorData[]>([]);
   const [loading, setLoading] = useState(true);

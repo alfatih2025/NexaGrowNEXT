@@ -51,6 +51,19 @@ function normalizeRow(row) {
   };
 }
 
+const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // run cleanup at most once per hour
+let lastCleanupAt = 0;
+
+async function cleanupOldSensorData() {
+  const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from('sensor_data')
+    .delete()
+    .lt('created_at', cutoff);
+
+  if (error) throw error;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -58,6 +71,11 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
+    const now = Date.now();
+    if (now - lastCleanupAt > CLEANUP_INTERVAL_MS) {
+      await cleanupOldSensorData();
+      lastCleanupAt = now;
+    }
     if (req.method === 'GET') {
       const { limit = 100, latest } = req.query;
 
@@ -121,6 +139,22 @@ export default async function handler(req, res) {
 
       if (error) throw error;
       return res.status(201).json(normalizeRow(data));
+    }
+
+    if (req.method === 'DELETE') {
+      const days = Number(req.query.olderThanDays ?? 3);
+      if (!Number.isFinite(days) || days <= 0) {
+        return res.status(400).json({ error: 'Invalid olderThanDays value' });
+      }
+
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from('sensor_data')
+        .delete()
+        .lt('created_at', cutoff);
+
+      if (error) throw error;
+      return res.status(200).json({ deleted_before: cutoff });
     }
 
     res.status(405).json({ error: 'Method not allowed' });

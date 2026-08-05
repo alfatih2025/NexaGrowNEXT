@@ -52,7 +52,7 @@ const SUBSCRIBE_TOPICS = [
 
 const ESP_ONLINE_TIMEOUT_MS = 60_000;
 const HISTORY_LIMIT = 120;
-const SENSOR_PERSIST_INTERVAL_MS = 20_000;
+const SENSOR_PERSIST_INTERVAL_MS = 30_000;
 const SETTINGS_EVENT = 'nexagrow:settings-updated';
 
 let lastPersistedSensorJson: string | null = null;
