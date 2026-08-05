@@ -212,19 +212,22 @@ function emit() {
   const browserOnline = snapshot.browserOnline;
   const mqttConnected = snapshot.mqttConnected;
   
-  // System online jika web + mqtt aktif (ESP32 sensor timeout tidak membuat web offline)
-  const systemOnline = browserOnline && mqttConnected;
+  // System online hanya jika web + mqtt + ESP32 aktif
+  const systemOnline = browserOnline && mqttConnected && espOnline;
   
   const reasonParts: string[] = [];
 
   if (!browserOnline) reasonParts.push('Web offline');
   if (!mqttConnected) reasonParts.push(snapshot.mqttError || 'MQTT belum terhubung');
   
-  // ESP32 offline hanya dijadikan informasi, tidak membuat sistem offline
   const espLastSeen = snapshot.espLastSeenAt ? new Date(snapshot.espLastSeenAt) : null;
   const espLastSeenMs = espLastSeen ? now - espLastSeen.getTime() : null;
-  if (!espOnline && espLastSeenMs !== null) {
-    reasonParts.push(`Data sensor: ${espLastSeenMs > 60000 ? 'lama' : 'terbaru'}`);
+  if (!espOnline) {
+    if (espLastSeenMs === null) {
+      reasonParts.push('ESP32 belum pernah terhubung');
+    } else {
+      reasonParts.push(`ESP32 offline • ${Math.floor(espLastSeenMs / 1000)} detik lalu`);
+    }
   }
 
   snapshot = {
