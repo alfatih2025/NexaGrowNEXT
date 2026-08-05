@@ -73,7 +73,12 @@ function toBoolean(value: unknown, fallback = false) {
 }
 
 function normalizeSettings(input: Partial<Settings> | null | undefined): Settings {
-  const value = { ...DEFAULT_SETTINGS, ...(input || {}) };
+  const value = { ...DEFAULT_SETTINGS };
+  for (const [key, item] of Object.entries(input || {})) {
+    if (item !== null && item !== undefined) {
+      (value as Record<string, unknown>)[key] = item;
+    }
+  }
   const phase = normalizePlantPhase((value.plant_phase ?? value.crop_mode) as unknown);
   const defaults = getPhaseDefaults(phase);
 

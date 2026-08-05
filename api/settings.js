@@ -65,7 +65,13 @@ function phaseDefaults(phase) {
 }
 
 function normalizeSettings(input = {}) {
-  const obj = { ...DEFAULT_SETTINGS, ...(input || {}) };
+  const obj = { ...DEFAULT_SETTINGS };
+  for (const [key, value] of Object.entries(input || {})) {
+    if (value !== null && value !== undefined) {
+      obj[key] = value;
+    }
+  }
+
   const phase = normalizePhase(obj.plant_phase || obj.crop_mode);
   const defaults = phaseDefaults(phase);
   const soilLow = clampNumber(obj.soil_threshold_low ?? obj.soil_moisture_threshold ?? defaults.soil_threshold_low, 0, 100, defaults.soil_threshold_low);
@@ -109,6 +115,24 @@ const SETTINGS_DB_COLUMNS = new Set([
   'plant_phase',
   'crop_mode',
   'location',
+  'temp_threshold_high',
+  'temp_threshold_low',
+  'soil_threshold_low',
+  'soil_threshold_high',
+  'soil_threshold_critical',
+  'humidity_threshold_low',
+  'humidity_threshold_high',
+  'ph_min',
+  'ph_max',
+  'auto_report',
+  'report_time',
+  'watering_time',
+  'watering_duration',
+  'watering_enabled',
+  'user_name',
+  'user_email',
+  'updated_at',
+  'soil_moisture_threshold',
 ]);
 
 function filterSettingsForDatabase(input = {}) {
