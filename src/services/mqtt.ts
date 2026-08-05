@@ -50,7 +50,7 @@ const SUBSCRIBE_TOPICS = [
   TOPIC_SYSTEM_FAULT,
 ];
 
-const ESP_ONLINE_TIMEOUT_MS = 60_000;
+const ESP_ONLINE_TIMEOUT_MS = 5_000; // 5 detik sebelum ESP32 dianggap offline
 const HISTORY_LIMIT = 120;
 const SENSOR_PERSIST_INTERVAL_MS = 30_000;
 const SETTINGS_EVENT = 'nexagrow:settings-updated';
