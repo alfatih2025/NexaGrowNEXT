@@ -196,32 +196,25 @@ let reconnectTimer: number | null = null;
 
 function emit() {
   const now = Date.now();
-  
-  // ESP32 online jika: ada data dalam 60 detik, ATAU ada espLastSeenAt yang valid
-  let espOnline = false;
-  if (snapshot.espOnline && snapshot.espLastSeenAt) {
-    const elapsed = now - new Date(snapshot.espLastSeenAt).getTime();
-    espOnline = elapsed <= ESP_ONLINE_TIMEOUT_MS;
-  }
-  
-  // Update espOnline jika sudah off tapi masih punya lastSeenAt yang valid
-  if (!snapshot.espOnline && espOnline) {
-    snapshot = { ...snapshot, espOnline: true };
-  }
 
   const browserOnline = snapshot.browserOnline;
   const mqttConnected = snapshot.mqttConnected;
-  
+
+  const espLastSeenMs = snapshot.espLastSeenAt ? now - new Date(snapshot.espLastSeenAt).getTime() : null;
+  const espOnline = Boolean(
+    snapshot.espOnline &&
+    espLastSeenMs !== null &&
+    espLastSeenMs <= ESP_ONLINE_TIMEOUT_MS
+  );
+
   // System online hanya jika web + mqtt + ESP32 aktif
   const systemOnline = browserOnline && mqttConnected && espOnline;
-  
+
   const reasonParts: string[] = [];
 
   if (!browserOnline) reasonParts.push('Web offline');
   if (!mqttConnected) reasonParts.push(snapshot.mqttError || 'MQTT belum terhubung');
-  
-  const espLastSeen = snapshot.espLastSeenAt ? new Date(snapshot.espLastSeenAt) : null;
-  const espLastSeenMs = espLastSeen ? now - espLastSeen.getTime() : null;
+
   if (!espOnline) {
     if (espLastSeenMs === null) {
       reasonParts.push('ESP32 status belum diterima');
