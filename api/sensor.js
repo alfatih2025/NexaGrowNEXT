@@ -59,6 +59,25 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { limit = 100, latest } = req.query;
 
+      if (latest === 'nodes' || latest === 'per-node') {
+        const { data, error } = await supabase
+          .from('sensor_data')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+
+        const latestByNode = new Map();
+        for (const row of Array.isArray(data) ? data : []) {
+          const normalized = normalizeRow(row);
+          if (!normalized?.node_id || latestByNode.has(normalized.node_id)) continue;
+          latestByNode.set(normalized.node_id, normalized);
+        }
+
+        return res.status(200).json([1, 2].map((nodeId) => latestByNode.get(nodeId)).filter(Boolean));
+      }
+
       if (latest === 'true') {
         const { data, error } = await supabase
           .from('sensor_data')
@@ -128,6 +147,11 @@ export default async function handler(req, res) {
       try {
         const brokerUrl = process.env.VITE_BROKER_URL || 'wss://a4e9379a555f47669c90f4c69b75eeda.s1.eu.hivemq.cloud:8884/mqtt';
         const mqttUrl = brokerUrl.replace('wss://', 'mqtts://').replace(':8884/mqtt', ':8883');
+        const realtimePayload = normalizeRow(data) || {
+          ...sensorPayload,
+          device_id: `node_${nodeId}`,
+          created_at: new Date().toISOString(),
+        };
 
         const client = mqtt.connect(mqttUrl, {
           username: process.env.VITE_MQTT_USERNAME || 'NexaGrowv2',
@@ -146,7 +170,15 @@ export default async function handler(req, res) {
           };
 
           client.on('connect', () => {
-            client.publish('sproutai/sensor/data', JSON.stringify(sensorPayload), { qos: 0 }, finish);
+            const payload = JSON.stringify(realtimePayload);
+            let pending = 2;
+            const done = () => {
+              pending--;
+              if (pending <= 0) finish();
+            };
+
+            client.publish('sproutai/sensor/data', payload, { qos: 0, retain: false }, done);
+            client.publish(`sproutai/sensor/node/${nodeId}`, payload, { qos: 1, retain: true }, done);
           });
 
           client.on('error', (err) => {

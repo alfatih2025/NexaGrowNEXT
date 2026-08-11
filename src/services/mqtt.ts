@@ -25,6 +25,7 @@ const TOPIC_SETTINGS_STATUS = 'sproutai/settings/status';
 const TOPIC_SCHEDULE_CMD = 'sproutai/schedule/cmd';
 const TOPIC_SCHEDULE_STATUS = 'sproutai/schedule/status';
 const TOPIC_SENSOR_JSON = 'sproutai/sensor/data';
+const TOPIC_SENSOR_NODE = 'sproutai/sensor/node/+';
 const TOPIC_RAIN_CHANCE = 'sproutai/weather/rain_chance';
 const TOPIC_SOIL = 'sproutai/sensor/soil';
 const TOPIC_TEMP = 'sproutai/sensor/temp';
@@ -36,6 +37,7 @@ const SUBSCRIBE_TOPICS = [
   DEVICE_STATUS_TOPIC,
   SYSTEM_STATUS_TOPIC,
   TOPIC_SENSOR_JSON,
+  TOPIC_SENSOR_NODE,
   TOPIC_SOIL,
   TOPIC_TEMP,
   TOPIC_HUMIDITY,
@@ -461,7 +463,7 @@ function updateFromTopic(topic: string, payload: string) {
     return;
   }
 
-  if (topic === TOPIC_SENSOR_JSON) {
+  if (topic === TOPIC_SENSOR_JSON || topic.startsWith('sproutai/sensor/node/')) {
     const parsed = normalizeJsonSensorPayload(payload);
     if (parsed) {
       setSensorSnapshot(parsed, topic, true);
@@ -470,7 +472,6 @@ function updateFromTopic(topic: string, payload: string) {
         lastPayload: payload,
         lastMessageAt: now,
       });
-      persistSensorDataToApi(payload, parsed).catch(() => {});
     }
     return;
   }
