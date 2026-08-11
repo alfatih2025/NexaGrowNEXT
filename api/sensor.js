@@ -1,4 +1,5 @@
 import supabase from '../src/lib/apiHelpers/_supabase.js';
+import mqtt from 'mqtt';
 
 function toNumber(value, fallback = null) {
   const n = Number(value);
@@ -103,8 +104,11 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       const body = req.body || {};
+      
+      const deviceId = body.node_id ? `node_${body.node_id}` : (body.device_id || 'ESP32_001');
+      
       const payload = {
-        device_id: body.device_id || 'ESP32_001',
+        device_id: deviceId,
         temperature: toNumber(body.temperature, 0),
         humidity: toNumber(body.humidity, 0),
         soil_moisture: toNumber(body.soil_moisture ?? body.soil, 0),
@@ -138,6 +142,47 @@ export default async function handler(req, res) {
         .single();
 
       if (error) throw error;
+
+      // Publish to MQTT to update Web UI in real-time
+      try {
+        const brokerUrl = process.env.VITE_BROKER_URL || 'wss://a4e9379a555f47669c90f4c69b75eeda.s1.eu.hivemq.cloud:8884/mqtt';
+        // Vercel serverless function can use Secure WebSockets (wss://) or mqtts:// (port 8883)
+        // Here we use the WSS URL since it's already in env, but mqtts on 8883 is better for server-side
+        // Let's use mqtts to be safe on backend
+        const mqttUrl = brokerUrl.replace('wss://', 'mqtts://').replace(':8884/mqtt', ':8883');
+        
+        const client = mqtt.connect(mqttUrl, {
+          username: process.env.VITE_MQTT_USERNAME || 'NexaGrowv2',
+          password: process.env.VITE_MQTT_PASSWORD || 'NexaGrow12345',
+          connectTimeout: 4000,
+        });
+
+        await new Promise((resolve) => {
+          let resolved = false;
+          const finish = () => {
+            if (!resolved) {
+              resolved = true;
+              client.end();
+              resolve();
+            }
+          };
+
+          client.on('connect', () => {
+            const mqttPayload = { ...payload, node_id: body.node_id || undefined };
+            client.publish('sproutai/sensor/data', JSON.stringify(mqttPayload), { qos: 0 }, finish);
+          });
+
+          client.on('error', (err) => {
+            console.error('[MQTT Publish Error]', err);
+            finish();
+          });
+          
+          setTimeout(finish, 5000); // 5 seconds timeout
+        });
+      } catch (err) {
+        console.error('[MQTT Publish Exception]', err);
+      }
+
       return res.status(201).json(normalizeRow(data));
     }
 

@@ -18,12 +18,17 @@ export function useMultiNodeSensorData() {
   useEffect(() => {
     const fetchLatest = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_LARAVEL_API_URL || 'http://192.168.43.105:8000';
-        const res = await fetch(`${apiUrl}/api/sensor-data/latest`);
+        const apiUrl = 'https://nexa-grow-next.vercel.app';
+        const res = await fetch(`${apiUrl}/api/sensor?limit=20`);
         if (res.ok) {
           const data = await res.json();
-          if (data.node1) setNode1(data.node1);
-          if (data.node2) setNode2(data.node2);
+          if (Array.isArray(data)) {
+            const node1Data = data.find((d: any) => d.device_id === 'node_1' || d.node_id === 1);
+            const node2Data = data.find((d: any) => d.device_id === 'node_2' || d.node_id === 2);
+            
+            if (node1Data) setNode1({ ...node1Data, node_id: 1 });
+            if (node2Data) setNode2({ ...node2Data, node_id: 2 });
+          }
         }
       } catch (e) {
         console.error('Failed to fetch node data', e);
