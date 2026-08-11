@@ -1,9 +1,10 @@
-import { Bell, Wifi, WifiOff, ChevronDown, CheckCheck, ShieldAlert } from 'lucide-react';
+import { Bell, Wifi, WifiOff, ChevronDown, CheckCheck, ShieldAlert, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { MqttStatusSnapshot } from '../hooks/useMqttStatus';
 import { useAlerts } from '../hooks/useAlerts';
 import { PlantHealthSummary } from '../lib/plantPhase';
+import { useTheme } from '../context/ThemeContext';
 
 interface HeaderProps {
   mqttStatus: MqttStatusSnapshot;
@@ -23,10 +24,12 @@ const pageTitles: Record<string, string> = {
 };
 
 export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
+  const { theme, toggleTheme } = useTheme();
   const { alerts, unreadCount, markAsRead, fetchAlerts } = useAlerts();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const isOnline = mqttStatus.espOnline;
+  
   useEffect(() => {
     const onDown = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
@@ -44,18 +47,24 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
   const title = pageTitles[currentPage] || 'Dashboard';
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-slate-200/70 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6">
         <div className="min-w-0 pl-12 pr-1 sm:pl-0">
-          <h2 className="truncate text-lg font-bold text-slate-900 sm:text-2xl">{title}</h2>
+          <h2 className="truncate text-lg font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{title}</h2>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <motion.div
             initial={false}
             animate={{
               backgroundColor: isOnline ? 'rgba(16, 185, 129, 0.14)' : 'rgba(248, 113, 113, 0.14)',
-              color: isOnline ? '#065f46' : '#991b1b',
+              color: isOnline ? (theme === 'dark' ? '#34d399' : '#065f46') : (theme === 'dark' ? '#f87171' : '#991b1b'),
             }}
             className="inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-[11px] font-semibold sm:px-3 sm:py-2 sm:text-xs"
           >

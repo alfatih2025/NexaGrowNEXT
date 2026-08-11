@@ -237,14 +237,12 @@ function App() {
         return (
           <Dashboard
             sensorData={liveSensorData}
-            deviceStatus={deviceStatus}
             settings={settings}
             weatherData={weatherData}
-            health={health}
           />
         );
       case 'monitoring':
-        return <Monitoring history={history} sensorData={liveSensorData} mqttHistory={mqttHistory} />;
+        return <Monitoring />;
       case 'chat':
         return <ChatPage sensorData={liveSensorData} settings={settings} weatherData={weatherData} />;
       case 'control':
@@ -261,10 +259,8 @@ function App() {
         return (
           <Dashboard
             sensorData={liveSensorData}
-            deviceStatus={deviceStatus}
             settings={settings}
             weatherData={weatherData}
-            health={health}
           />
         );
     }

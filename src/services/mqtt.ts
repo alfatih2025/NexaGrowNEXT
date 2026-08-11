@@ -1,8 +1,8 @@
 import mqtt, { type MqttClient } from 'mqtt';
 
-const DEFAULT_BROKER_URL = 'wss://083ac0ac0dbf4e78877e4a5cd24d426d.s1.eu.hivemq.cloud:8884/mqtt';
-const DEFAULT_MQTT_USERNAME = 'NexaGrow';
-const DEFAULT_MQTT_PASSWORD = 'Nexa12345678';
+const DEFAULT_BROKER_URL = 'wss://a4e9379a555f47669c90f4c69b75eeda.s1.eu.hivemq.cloud:8884/mqtt';
+const DEFAULT_MQTT_USERNAME = 'NexaGrowv2';
+const DEFAULT_MQTT_PASSWORD = 'NexaGrow12345';
 
 const BROKER_URL = (import.meta.env.VITE_BROKER_URL as string | undefined)?.trim() || DEFAULT_BROKER_URL;
 const MQTT_USERNAME = (import.meta.env.VITE_MQTT_USERNAME as string | undefined)?.trim() || DEFAULT_MQTT_USERNAME;
@@ -60,6 +60,7 @@ let lastPersistedSensorAt = 0;
 
 export interface MqttSensorSnapshot {
   device_id: string | null;
+  node_id?: number | null;
   temperature: number | null;
   humidity: number | null;
   soil_moisture: number | null;
@@ -134,6 +135,7 @@ const listeners = new Set<() => void>();
 
 const emptySensorSnapshot: MqttSensorSnapshot = {
   device_id: null,
+  node_id: null,
   temperature: null,
   humidity: null,
   soil_moisture: null,
@@ -495,6 +497,7 @@ function normalizeJsonSensorPayload(payload: string): SensorDelta | null {
 
     return {
       device_id: typeof obj.device_id === 'string' ? obj.device_id : undefined,
+      node_id: parseNumeric(obj.node_id),
       temperature: parseNumeric(obj.temperature ?? obj.suhu),
       humidity: parseNumeric(obj.humidity ?? obj.kelembapan_udara),
       soil_moisture: parseNumeric(obj.soil_moisture ?? obj.soil ?? obj.tanah),

@@ -1,125 +1,123 @@
-import { Thermometer, Droplets, Power, CloudRain, CalendarClock, ShieldAlert, MessageSquare} from 'lucide-react';
-import { SensorCard } from '../components/SensorCard';
+import { MessageSquare, Network } from 'lucide-react';
 import { ChatInterface } from '../components/ChatInterface';
+import { NodeCard } from '../components/NodeCard';
+import { useMultiNodeSensorData } from '../hooks/useMultiNodeSensorData';
 import { SensorData } from '../hooks/useSensorData';
-
 import { Settings } from '../hooks/useSettings';
 import { WeatherData } from '../hooks/useWeather';
-import { PlantHealthSummary, getPlantPhaseProfile } from '../lib/plantPhase';
-import logo from '../assets/nexagrow-logo.png';
-
-import type { DeviceStatus } from '../hooks/useDeviceStatus';
+import { useMqttStatus } from '../hooks/useMqttStatus';
 
 interface DashboardProps {
   sensorData: SensorData | null;
-  deviceStatus?: DeviceStatus | null;
   settings: Settings | null;
   weatherData?: WeatherData | null;
-  health: PlantHealthSummary | null;
 }
 
+export function Dashboard({ sensorData, settings, weatherData }: DashboardProps) {
+  const { node1, node2, loading } = useMultiNodeSensorData();
+  const { espOnline, mqttConnected } = useMqttStatus();
 
-function formatOneDecimal(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
-  return Number(value).toFixed(1);
-}
-
-function SummaryTile({
-  title,
-  value,
-  detail,
-  tone = 'good',
-}: {
-  title: string;
-  value: string;
-  detail?: string;
-  tone?: 'good' | 'warning' | 'danger';
-}) {
-  const toneMap = {
-    good: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200',
-    warning: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200',
-    danger: 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200',
-  } as const;
+  const isNode1Online = node1?.created_at && (new Date().getTime() - new Date(node1.created_at).getTime() < 60000);
+  const isNode2Online = node2?.created_at && (new Date().getTime() - new Date(node2.created_at).getTime() < 60000);
+  
+  const nodesOnline = [isNode1Online, isNode2Online].filter(Boolean).length;
 
   return (
-    <div className={`rounded-2xl border p-3 shadow-sm ${toneMap[tone]}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">{title}</p>
-      <p className="mt-1 text-lg font-bold leading-tight sm:text-xl">{value}</p>
-      {detail && <p className="mt-1 text-[11px] opacity-80 sm:text-xs">{detail}</p>}
-    </div>
-  );
-}
-
-export function Dashboard({ sensorData, settings, weatherData, health }: DashboardProps) {
-  const phase = getPlantPhaseProfile(settings?.plant_phase);
-  const scheduleTime = sensorData?.watering_time || settings?.watering_time || '-';
-  const scheduleDuration = sensorData?.watering_duration ?? settings?.watering_duration ?? null;
-  const weatherLocation = weatherData?.location || 'Lokasi cuaca belum dipilih';
-  const weatherTitle = weatherData?.current.weather || 'Data belum tersedia';
-  const weatherTone =
-    weatherData && (weatherData.current.rain_chance >= 60 || /hujan|mendung|berawan|gerimis/i.test(weatherData.current.weather))
-      ? 'warning'
-      : 'good';
-  const humidityTone =
-    sensorData && settings && (sensorData.humidity < settings.humidity_threshold_low || sensorData.humidity > settings.humidity_threshold_high)
-      ? 'warning'
-      : 'good';
-
-  return (
-    <div className="space-y-6">
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
-        <div className="grid gap-5 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-5 text-white lg:grid-cols-[1.15fr_0.85fr] lg:p-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 overflow-hidden rounded-3xl bg-white/15 ring-1 ring-white/20 sm:h-16 sm:w-16">
-                <img src={logo} alt="NexaGrow" className="h-full w-full object-cover" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-white/80">NexaGrow</p>
-                <h1 className="text-2xl font-black tracking-tight sm:text-4xl">Intelligent Plant Monitoring</h1>
-              </div>
-            </div>
-
-            <p className="max-w-2xl text-sm leading-6 text-emerald-50 sm:text-base">
-              Platform smart agriculture berbasis IoT yang diperkuat AI untuk monitoring, analisis, dan otomatisasi pertanian secara real-time.
+    <div className="space-y-8 pb-8">
+      {/* Hero / Network Status */}
+      <div className="glass-card overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white relative">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        <div className="relative p-6 lg:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2 flex items-center gap-3">
+              <Network className="w-8 h-8 text-cyan-400" />
+              NexaGrow ESP-NOW
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base max-w-xl">
+              Platform smart agriculture berbasis IoT. Memantau 2 Wemos Node via ESP32 Gateway secara real-time.
             </p>
           </div>
-
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-            <SummaryTile title="Fase Tanaman" value={phase.label} detail={phase.description} />
-            <SummaryTile title="Status Cuaca" value={weatherTitle} detail={weatherLocation || 'Lokasi cuaca belum dipilih'} tone={weatherTone} />
-            <SummaryTile title="Kondisi Kesehatan" value={health?.healthLabel ?? 'Data belum lengkap'} detail={health?.healthDetail} tone={health?.statusTone ?? 'warning'} />
+          <div className="flex flex-col items-end gap-2 bg-slate-950/50 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
+            <div className="text-sm text-slate-400 font-medium">Status Jaringan</div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${mqttConnected ? 'bg-cyan-400' : 'bg-red-500'}`}></div>
+                <span className="font-semibold">{mqttConnected ? 'Broker OK' : 'Broker Disconnected'}</span>
+              </div>
+              <div className="w-px h-4 bg-slate-700"></div>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${nodesOnline > 0 ? 'bg-emerald-400' : 'bg-red-500'}`}></div>
+                <span className="font-semibold text-emerald-400">{nodesOnline}/2 Nodes Online</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-
-      <div className="grid grid-cols-2 gap-3 auto-rows-min">
-        <SensorCard
-          title="Suhu"
-          value={formatOneDecimal(sensorData?.temperature)}
-          unit="°C"
-          icon={Thermometer}
-          status={sensorData && settings && (sensorData.temperature > settings.temp_threshold_high || sensorData.temperature < settings.temp_threshold_low) ? 'warning' : 'good'}
+      {/* Node Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <NodeCard 
+          nodeName="Wemos Node 1" 
+          data={node1} 
+          status={isNode1Online ? 'online' : 'offline'} 
         />
-        <SensorCard title="Kelembapan Udara" value={formatOneDecimal(sensorData?.humidity)} unit="%" icon={Droplets} status={humidityTone} />
-        <SensorCard title="Kelembapan Tanah" value={formatOneDecimal(sensorData?.soil_moisture)} unit="%" icon={Droplets} status={health?.statusTone ?? 'warning'} />
-        <SensorCard title="Status Pompa" value={sensorData?.pump_status ? 'ON' : 'OFF'} unit="" icon={Power} status={sensorData?.pump_status ? 'good' : 'warning'} />
-        <SensorCard title="Jadwal Penyiraman" value={scheduleTime} unit={scheduleDuration != null ? `${scheduleDuration} detik` : ''} icon={CalendarClock} status="good" />
-        <SensorCard
-          title="Cuaca"
-          value={weatherData?.current.weather || '-'}
-          unit=""
-          icon={CloudRain}
-          status={weatherData && (weatherData.current.rain_chance >= 60 || /hujan|mendung|berawan|gerimis/i.test(weatherData.current.weather)) ? 'warning' : 'good'}
+        <NodeCard 
+          nodeName="Wemos Node 2" 
+          data={node2} 
+          status={isNode2Online ? 'online' : 'offline'} 
         />
       </div>
 
+      {/* Comparison Panel */}
+      <div className="glass-card p-6 border border-slate-200 dark:border-slate-800">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Network className="w-5 h-5 text-emerald-500" />
+          Perbandingan Node
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700">
+                <th className="py-3 px-4 font-semibold text-slate-500 dark:text-slate-400">Parameter</th>
+                <th className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">Node 1</th>
+                <th className="py-3 px-4 font-bold text-cyan-600 dark:text-cyan-400">Node 2</th>
+                <th className="py-3 px-4 font-semibold text-slate-500 dark:text-slate-400">Selisih</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                <td className="py-3 px-4 font-medium">Suhu Udara</td>
+                <td className="py-3 px-4">{node1?.temperature?.toFixed(1) || '--'} °C</td>
+                <td className="py-3 px-4">{node2?.temperature?.toFixed(1) || '--'} °C</td>
+                <td className="py-3 px-4 text-slate-500">
+                  {node1?.temperature && node2?.temperature ? Math.abs(node1.temperature - node2.temperature).toFixed(1) + ' °C' : '--'}
+                </td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                <td className="py-3 px-4 font-medium">Kelembapan Udara</td>
+                <td className="py-3 px-4">{node1?.humidity?.toFixed(1) || '--'} %</td>
+                <td className="py-3 px-4">{node2?.humidity?.toFixed(1) || '--'} %</td>
+                <td className="py-3 px-4 text-slate-500">
+                  {node1?.humidity && node2?.humidity ? Math.abs(node1.humidity - node2.humidity).toFixed(1) + ' %' : '--'}
+                </td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                <td className="py-3 px-4 font-medium">Kelembapan Tanah</td>
+                <td className="py-3 px-4">{node1?.soil_moisture?.toFixed(1) || '--'} %</td>
+                <td className="py-3 px-4">{node2?.soil_moisture?.toFixed(1) || '--'} %</td>
+                <td className="py-3 px-4 text-slate-500">
+                  {node1?.soil_moisture && node2?.soil_moisture ? Math.abs(node1.soil_moisture - node2.soil_moisture).toFixed(1) + ' %' : '--'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-
+      {/* AI Chat */}
       <div className="space-y-3">
         <div className="flex items-center gap-3 px-1">
-          <MessageSquare className="h-5 w-5 text-emerald-600" />
+          <MessageSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           <div>
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">AI Chat</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Tanya analisis sensor, cuaca, dan saran perawatan.</p>

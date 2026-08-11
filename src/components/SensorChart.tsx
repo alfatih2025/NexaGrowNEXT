@@ -11,7 +11,7 @@ import {
 import { SensorData } from '../hooks/useSensorData';
 
 interface SensorChartProps {
-  data: SensorData[];
+  data: any[];
   type: 'temperature' | 'humidity' | 'soil_moisture';
   title: string;
   color: string;
@@ -37,8 +37,8 @@ export function SensorChart({ data, type, title, color }: SensorChartProps) {
   const config = typeConfig[type];
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+    <div className="glass-card bg-white dark:bg-slate-900/50 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
