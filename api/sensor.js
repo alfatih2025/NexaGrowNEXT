@@ -47,7 +47,7 @@ async function cleanupOldSensorData() {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
@@ -83,8 +83,8 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       // Validate API Key
-      const apiKey = req.headers['x-api-key'];
-      const validApiKey = process.env.SECRET_API_KEY || 'NexaGrow_SecretKey_2026';
+      const apiKey = String(req.headers['x-api-key'] || req.headers['X-Api-Key'] || req.headers['X-API-Key'] || '').trim();
+      const validApiKey = String(process.env.SECRET_API_KEY || 'NexaGrow_SecretKey_2026').trim();
 
       if (apiKey !== validApiKey) {
         return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
