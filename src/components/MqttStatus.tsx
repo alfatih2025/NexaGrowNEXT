@@ -69,8 +69,8 @@ export function MqttStatus() {
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile label="ESP32" value={status.espOnline ? 'Online' : 'Offline'} icon={Activity} tone={status.espOnline ? 'good' : 'danger'} />
         <StatTile
-          label="Mode"
-          value={sensor?.device_mode === 'auto' ? 'Otomatis' : sensor?.device_mode === 'manual' ? 'Manual' : 'N/A'}
+          label="Node"
+          value={sensor?.node_id != null ? `${sensor.node_id}` : 'N/A'}
           icon={CalendarClock}
           tone="good"
         />

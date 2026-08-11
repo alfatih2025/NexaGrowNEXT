@@ -60,38 +60,10 @@ let lastPersistedSensorAt = 0;
 
 export interface MqttSensorSnapshot {
   device_id: string | null;
-  node_id?: number | null;
+  node_id: number | null;
   temperature: number | null;
   humidity: number | null;
   soil_moisture: number | null;
-  rain: number | null;
-  score: number | null;
-  soil_score: number | null;
-  vdp_score: number | null;
-  rain_score: number | null;
-  vpd: number | null;
-  duration_estimate: number | null;
-  pump_status: boolean;
-  led_status: boolean;
-  device_mode: 'manual' | 'auto' | null;
-  plant_phase: 'vegetatif' | 'generatif' | null;
-  wifi_status: string | null;
-  threshold_kritis: number | null;
-  threshold_atas: number | null;
-  threshold_bawah: number | null;
-  watering_time: string | null;
-  watering_duration: number | null;
-  watering_active: boolean | null;
-  auto_state: string | null;
-  auto_reason: string | null;
-  schedule_enabled: boolean;
-  formula_name: string | null;
-  formula_soil: string | null;
-  formula_vpd: string | null;
-  formula_score: string | null;
-  soil_raw_dry: number | null;
-  dht_error: boolean;
-  soil_error: boolean;
   updatedAt: string | null;
   sourceTopic: string | null;
 }
@@ -139,34 +111,6 @@ const emptySensorSnapshot: MqttSensorSnapshot = {
   temperature: null,
   humidity: null,
   soil_moisture: null,
-  rain: null,
-  score: null,
-  soil_score: null,
-  vdp_score: null,
-  rain_score: null,
-  vpd: null,
-  duration_estimate: null,
-  pump_status: false,
-  watering_active: null,
-  auto_state: null,
-  auto_reason: null,
-  led_status: false,
-  device_mode: null,
-  wifi_status: null,
-  threshold_kritis: null,
-  threshold_atas: null,
-  threshold_bawah: null,
-  watering_time: null,
-  watering_duration: null,
-  schedule_enabled: true,
-  formula_name: null,
-  formula_soil: null,
-  formula_vpd: null,
-  formula_score: null,
-  soil_raw_dry: null,
-  dht_error: false,
-  soil_error: false,
-  plant_phase: null,
   updatedAt: null,
   sourceTopic: null,
 };
@@ -319,34 +263,10 @@ async function persistSensorDataToApi(payload: string, parsed: SensorDelta) {
 
   const now = Date.now();
   const normalized = JSON.stringify({
-    device_id: parsed.device_id ?? undefined,
+    node_id: parsed.node_id ?? undefined,
     temperature: parsed.temperature ?? undefined,
     humidity: parsed.humidity ?? undefined,
     soil_moisture: parsed.soil_moisture ?? undefined,
-    rain: parsed.rain ?? undefined,
-    score: parsed.score ?? undefined,
-    soil_score: parsed.soil_score ?? undefined,
-    vdp_score: parsed.vdp_score ?? undefined,
-    rain_score: parsed.rain_score ?? undefined,
-    vpd: parsed.vpd ?? undefined,
-    duration_estimate: parsed.duration_estimate ?? undefined,
-    pump_status: parsed.pump_status ?? undefined,
-    led_status: parsed.led_status ?? undefined,
-    device_mode: parsed.device_mode ?? undefined,
-    wifi_status: parsed.wifi_status ?? undefined,
-    threshold_kritis: parsed.threshold_kritis ?? undefined,
-    threshold_atas: parsed.threshold_atas ?? undefined,
-    threshold_bawah: parsed.threshold_bawah ?? undefined,
-    watering_time: parsed.watering_time ?? undefined,
-    watering_duration: parsed.watering_duration ?? undefined,
-    schedule_enabled: parsed.schedule_enabled ?? undefined,
-    formula_name: parsed.formula_name ?? undefined,
-    formula_soil: parsed.formula_soil ?? undefined,
-    formula_vpd: parsed.formula_vpd ?? undefined,
-    formula_score: parsed.formula_score ?? undefined,
-    soil_raw_dry: parsed.soil_raw_dry ?? undefined,
-    dht_error: parsed.dht_error ?? undefined,
-    soil_error: parsed.soil_error ?? undefined,
   });
 
   if (lastPersistedSensorJson === normalized && now - lastPersistedSensorAt < SENSOR_PERSIST_INTERVAL_MS) {
@@ -384,26 +304,7 @@ function consumePendingMqttAcks(topic: string, payload: string) {
 }
 
 function applySettingsSnapshot(detail: Record<string, unknown>, sourceTopic: string) {
-  // Update sensor snapshot for the fields used by dashboard/control (thresholds + schedule).
-  const nextSensorDelta: SensorDelta = {
-    threshold_kritis: parseNumeric(detail.threshold_kritis ?? detail.soil_threshold_critical),
-    threshold_atas: parseNumeric(detail.threshold_atas ?? detail.soil_threshold_high),
-    threshold_bawah: parseNumeric(detail.threshold_bawah ?? detail.soil_threshold_low),
-    watering_time: typeof detail.watering_time === 'string' ? detail.watering_time : undefined,
-    watering_duration: parseNumeric(detail.watering_duration),
-    schedule_enabled: detail.watering_enabled === undefined
-      ? (detail.schedule_enabled === undefined ? undefined : parseBoolean(detail.schedule_enabled))
-      : Boolean(detail.watering_enabled),
-
-    // Extra fields are dispatched via dispatchSettingsEvent (useSettings),
-    // not stored in MqttSensorSnapshot because the type doesn't include them.
-  };
-
-
-  setSensorSnapshot(nextSensorDelta, sourceTopic, true);
-
-  // IMPORTANT: dispatch full settings payload so every page re-renders with latest values.
-  // Payload shape should match what useSettings.normalizeSettings expects.
+  // MQTT sensor snapshot is intentionally sensor-only. Settings remain a separate signal through the settings context/event bus.
   const settingsDetail = {
     ...(detail as Record<string, unknown>),
 
@@ -498,38 +399,9 @@ function normalizeJsonSensorPayload(payload: string): SensorDelta | null {
     return {
       device_id: typeof obj.device_id === 'string' ? obj.device_id : undefined,
       node_id: parseNumeric(obj.node_id),
-      temperature: parseNumeric(obj.temperature ?? obj.suhu),
-      humidity: parseNumeric(obj.humidity ?? obj.kelembapan_udara),
-      soil_moisture: parseNumeric(obj.soil_moisture ?? obj.soil ?? obj.tanah),
-      rain: parseNumeric(obj.rain ?? obj.hujan),
-      // support Arduino field names: score_total(score), vpd, soil_score, vdp_score, rain_score
-      score: parseNumeric(obj.score ?? obj.score_total ?? obj.skor),
-      soil_score: parseNumeric(obj.soil_score ?? obj.skor_tanah),
-      vdp_score: parseNumeric(obj.vdp_score ?? obj.skor_vdp),
-      rain_score: parseNumeric(obj.rain_score ?? obj.skor_hujan),
-      vpd: parseNumeric(obj.vpd ?? obj.vdp_value ?? obj.vapor_pressure_deficit),
-
-      duration_estimate: parseNumeric(obj.duration_estimate ?? obj.duration ?? obj.durasi),
-      pump_status: parseBoolean(obj.pump_status ?? obj.relay_state),
-      led_status: parseBoolean(obj.led_status ?? obj.led_state ?? obj.feeder_status),
-      device_mode: parseMode(obj.device_mode ?? (obj.auto_mode === true ? 'auto' : obj.auto_mode === false ? 'manual' : undefined)),
-      wifi_status: typeof obj.wifi_status === 'string' ? obj.wifi_status : undefined,
-      threshold_kritis: parseNumeric(obj.threshold_kritis),
-      threshold_atas: parseNumeric(obj.threshold_atas),
-      threshold_bawah: parseNumeric(obj.threshold_bawah),
-      watering_time: typeof obj.watering_time === 'string' ? obj.watering_time : undefined,
-      watering_duration: parseNumeric(obj.watering_duration),
-      watering_active: parseBoolean(obj.watering_active),
-      auto_state: typeof obj.auto_state === 'string' ? obj.auto_state : undefined,
-      auto_reason: typeof obj.auto_reason === 'string' ? obj.auto_reason : undefined,
-      schedule_enabled: parseBoolean(obj.schedule_enabled ?? obj.watering_enabled),
-      formula_name: typeof obj.formula_name === 'string' ? obj.formula_name : undefined,
-      formula_soil: typeof obj.formula_soil === 'string' ? obj.formula_soil : undefined,
-      formula_vpd: typeof obj.formula_vpd === 'string' ? obj.formula_vpd : undefined,
-      formula_score: typeof obj.formula_score === 'string' ? obj.formula_score : undefined,
-      soil_raw_dry: parseNumeric(obj.soil_raw_dry),
-      dht_error: parseBoolean(obj.dht_error) ?? false,
-      soil_error: parseBoolean(obj.soil_error) ?? false,
+      temperature: parseNumeric(obj.temperature),
+      humidity: parseNumeric(obj.humidity),
+      soil_moisture: parseNumeric(obj.soil_moisture),
     };
   } catch {
     return null;
@@ -569,11 +441,7 @@ function updateFromTopic(topic: string, payload: string) {
   if (topic === DEVICE_STATUS_TOPIC) {
     const parsedStatus = parseStatusValue(trimmed);
     const isOnline = parsedStatus ?? true;
-    
-    if (!isOnline && sensorSnapshot) {
-      sensorSnapshot = { ...sensorSnapshot, pump_status: false, led_status: false };
-    }
-    
+
     setSnapshot({
       espOnline: isOnline,
       espLastSeenAt: now,
@@ -607,69 +475,10 @@ function updateFromTopic(topic: string, payload: string) {
     return;
   }
 
-  if (topic === TOPIC_SOIL) {
-    const value = parseNumeric(trimmed);
-    if (value !== null) setSensorSnapshot({ soil_moisture: value }, topic);
-  } else if (topic === TOPIC_TEMP) {
-    const value = parseNumeric(trimmed);
-    if (value !== null) setSensorSnapshot({ temperature: value }, topic);
-  } else if (topic === TOPIC_HUMIDITY) {
-    const value = parseNumeric(trimmed);
-    if (value !== null) setSensorSnapshot({ humidity: value }, topic);
-  } else if (topic === TOPIC_SCORE) {
-    const value = parseNumeric(trimmed);
-    if (value !== null) setSensorSnapshot({ score: value }, topic);
-  } else if (topic === TOPIC_POMPA_STATUS) {
-    const value = parseBoolean(trimmed);
-    if (value !== undefined) setSensorSnapshot({ pump_status: value }, topic);
-  } else if (topic === TOPIC_LAMPU_STATUS) {
-    const value = parseBoolean(trimmed);
-    if (value !== undefined) setSensorSnapshot({ led_status: value }, topic);
-  } else if (topic === TOPIC_MODE_STATUS) {
-    const mode = parseMode(trimmed);
-    if (mode !== undefined) setSensorSnapshot({ device_mode: mode }, topic);
-  } else if (topic === TOPIC_WIFI_STATUS) {
-    setSensorSnapshot({ wifi_status: trimmed || null }, topic);
-  } else if (topic === TOPIC_SETTINGS_CMD || topic === TOPIC_SETTINGS_STATUS) {
+  if (topic === TOPIC_SETTINGS_CMD || topic === TOPIC_SETTINGS_STATUS) {
     const parsed = parseMqttJsonPayload(trimmed);
     if (parsed) {
       applySettingsSnapshot(parsed, topic);
-    }
-  } else if (topic === TOPIC_SCHEDULE_STATUS) {
-    const parsed = parseMqttJsonPayload(trimmed);
-    if (parsed) {
-      const normalizedSchedule = {
-        watering_time: typeof parsed.watering_time === 'string' ? parsed.watering_time : undefined,
-        watering_duration: parseNumeric(parsed.watering_duration),
-        watering_enabled: parseBoolean(parsed.schedule_enabled ?? parsed.watering_enabled),
-        schedule_enabled: parseBoolean(parsed.schedule_enabled ?? parsed.watering_enabled),
-      };
-
-      setSensorSnapshot({
-        watering_time: normalizedSchedule.watering_time,
-        watering_duration: normalizedSchedule.watering_duration,
-        schedule_enabled: normalizedSchedule.schedule_enabled,
-      }, topic);
-      dispatchSettingsEvent(normalizedSchedule);
-    }
-  } else if (topic === TOPIC_SYSTEM_FAULT) {
-    const parsed = parseMqttJsonPayload(trimmed);
-    if (parsed) {
-      const device = parsed.device as string;
-      const status = parsed.status as string;
-      const isFault = status === 'fault';
-      
-      if (device === 'DHT22') {
-        setSensorSnapshot({ dht_error: isFault }, topic);
-      } else if (device === 'SOIL') {
-        setSensorSnapshot({ soil_error: isFault }, topic);
-      }
-      
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('nexagrow:sensor_fault', {
-          detail: { device, status, isFault }
-        }));
-      }
     }
   }
 
@@ -948,27 +757,6 @@ function applyLocalSnapshot(action: string, duration?: number, data?: Record<str
   const now = new Date().toISOString();
 
   switch (action) {
-    case 'pump_on':
-      setSensorSnapshot({ pump_status: true }, TOPIC_POMPA_STATUS, true);
-      break;
-    case 'pump_off':
-      setSensorSnapshot({ pump_status: false }, TOPIC_POMPA_STATUS, true);
-      break;
-    case 'pump_10s':
-      setSensorSnapshot({ pump_status: true }, TOPIC_POMPA_STATUS, true);
-      break;
-    case 'led_on':
-      setSensorSnapshot({ led_status: true }, TOPIC_LAMPU_STATUS, true);
-      break;
-    case 'led_off':
-      setSensorSnapshot({ led_status: false }, TOPIC_LAMPU_STATUS, true);
-      break;
-    case 'mode_auto':
-      setSensorSnapshot({ device_mode: 'auto' }, TOPIC_MODE_STATUS, true);
-      break;
-    case 'mode_manual':
-      setSensorSnapshot({ device_mode: 'manual' }, TOPIC_MODE_STATUS, true);
-      break;
     case 'settings_sync': {
       const nextSettings = {
         plant_phase: String(data?.plant_phase ?? data?.crop_mode ?? '').trim() || undefined,
@@ -989,26 +777,9 @@ function applyLocalSnapshot(action: string, duration?: number, data?: Record<str
         user_email: typeof data?.user_email === 'string' ? data.user_email : undefined,
       } as Record<string, unknown>;
 
-      setSensorSnapshot({
-        threshold_kritis: parseNumeric(data?.soil_threshold_critical),
-        threshold_atas: parseNumeric(data?.soil_threshold_high),
-        threshold_bawah: parseNumeric(data?.soil_threshold_low),
-        watering_time: typeof data?.watering_time === 'string' ? data.watering_time : undefined,
-        watering_duration: parseNumeric(data?.watering_duration),
-        schedule_enabled: data?.watering_enabled === undefined ? undefined : Boolean(data.watering_enabled),
-      }, TOPIC_SETTINGS_CMD, true);
       dispatchSettingsEvent(nextSettings);
       break;
     }
-    case 'schedule_set':
-      setSensorSnapshot({
-        watering_time: typeof data?.watering_time === 'string' ? data.watering_time : undefined,
-        watering_duration: parseNumeric(data?.watering_duration),
-        schedule_enabled: data?.schedule_enabled === undefined
-          ? (data?.watering_enabled === undefined ? undefined : Boolean(data.watering_enabled))
-          : Boolean(data.schedule_enabled),
-      }, TOPIC_SCHEDULE_STATUS, true);
-      break;
     default:
       break;
   }

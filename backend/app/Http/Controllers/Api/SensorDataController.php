@@ -24,7 +24,12 @@ class SensorDataController extends Controller
             'soil_moisture' => 'nullable|numeric',
         ]);
 
-        $record = SensorData::create($validated);
+        $record = SensorData::create([
+            'node_id' => $validated['node_id'],
+            'temperature' => $validated['temperature'] ?? null,
+            'humidity' => $validated['humidity'] ?? null,
+            'soil_moisture' => $validated['soil_moisture'] ?? null,
+        ]);
 
         // Publish to MQTT
         MqttPublisher::publish('sproutai/sensor/data', [

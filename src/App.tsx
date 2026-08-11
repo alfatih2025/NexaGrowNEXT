@@ -100,44 +100,23 @@ function App() {
     const fallback = sensorData ?? null;
     if (!fallback && !live) return null;
 
+    const fallbackObject = fallback ?? {
+      node_id: null,
+      device_id: 'ESP32_001',
+      temperature: null,
+      humidity: null,
+      soil_moisture: null,
+      created_at: new Date().toISOString(),
+    };
+
     return {
-      ...(fallback ?? {
-        device_id: 'ESP32_001',
-        temperature: 0,
-        humidity: 0,
-        soil_moisture: 0,
-        pump_status: false,
-        led_status: false,
-        device_mode: null,
-        wifi_status: 'unknown',
-        created_at: new Date().toISOString(),
-      }),
-      temperature: live?.temperature ?? fallback?.temperature ?? 0,
-      humidity: live?.humidity ?? fallback?.humidity ?? 0,
-      soil_moisture: live?.soil_moisture ?? fallback?.soil_moisture ?? 0,
-      rain: live?.rain ?? fallback?.rain ?? 0,
-      score: live?.score ?? fallback?.score ?? 0,
-      soil_score: live?.soil_score ?? fallback?.soil_score ?? 0,
-      vdp_score: live?.vdp_score ?? fallback?.vdp_score ?? 0,
-      rain_score: live?.rain_score ?? fallback?.rain_score ?? 0,
-      vpd: live?.vpd ?? fallback?.vpd ?? 0,
-      duration_estimate: live?.duration_estimate ?? fallback?.duration_estimate ?? 0,
-      pump_status: live?.pump_status ?? fallback?.pump_status ?? false,
-      led_status: live?.led_status ?? fallback?.led_status ?? false,
-      device_mode: live?.device_mode ?? fallback?.device_mode ?? null,
-      wifi_status: live?.wifi_status ?? fallback?.wifi_status ?? 'unknown',
-      threshold_kritis: live?.threshold_kritis ?? fallback?.threshold_kritis ?? null,
-      threshold_atas: live?.threshold_atas ?? fallback?.threshold_atas ?? null,
-      threshold_bawah: live?.threshold_bawah ?? fallback?.threshold_bawah ?? null,
-      watering_time: live?.watering_time ?? fallback?.watering_time ?? settings?.watering_time ?? null,
-      watering_duration: live?.watering_duration ?? fallback?.watering_duration ?? settings?.watering_duration ?? null,
-      schedule_enabled: live?.schedule_enabled ?? fallback?.schedule_enabled ?? settings?.watering_enabled ?? true,
-      formula_name: live?.formula_name ?? fallback?.formula_name ?? null,
-      formula_soil: live?.formula_soil ?? fallback?.formula_soil ?? null,
-      formula_vpd: live?.formula_vpd ?? fallback?.formula_vpd ?? null,
-      formula_score: live?.formula_score ?? fallback?.formula_score ?? null,
-      soil_raw_dry: live?.soil_raw_dry ?? fallback?.soil_raw_dry ?? null,
-      created_at: live?.updatedAt ?? fallback?.created_at ?? new Date().toISOString(),
+      ...fallbackObject,
+      node_id: live?.node_id ?? fallbackObject.node_id ?? null,
+      device_id: live?.device_id ?? fallbackObject.device_id ?? 'ESP32_001',
+      temperature: live?.temperature ?? fallbackObject.temperature ?? null,
+      humidity: live?.humidity ?? fallbackObject.humidity ?? null,
+      soil_moisture: live?.soil_moisture ?? fallbackObject.soil_moisture ?? null,
+      created_at: live?.updatedAt ?? fallbackObject.created_at ?? new Date().toISOString(),
     };
   }, [sensorData, mqttStatus.sensorSnapshot, settings]);
 

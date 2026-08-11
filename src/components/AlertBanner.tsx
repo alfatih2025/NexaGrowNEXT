@@ -27,7 +27,7 @@ export function AlertBanner({ sensorData, settings }: AlertBannerProps) {
 
     const newAlerts: Alert[] = [];
 
-    if (sensorData.temperature > settings.temp_threshold_high) {
+    if (sensorData.temperature != null && sensorData.temperature > settings.temp_threshold_high) {
       newAlerts.push({
         id: 'temp-high',
         type: 'temperature',
@@ -37,7 +37,7 @@ export function AlertBanner({ sensorData, settings }: AlertBannerProps) {
       });
     }
 
-    if (sensorData.temperature < settings.temp_threshold_low) {
+    if (sensorData.temperature != null && sensorData.temperature < settings.temp_threshold_low) {
       newAlerts.push({
         id: 'temp-low',
         type: 'temperature',
@@ -47,7 +47,7 @@ export function AlertBanner({ sensorData, settings }: AlertBannerProps) {
       });
     }
 
-    if (sensorData.soil_moisture < settings.soil_threshold_critical) {
+    if (sensorData.soil_moisture != null && sensorData.soil_moisture < settings.soil_threshold_critical) {
       newAlerts.push({
         id: 'soil-critical',
         type: 'soil',
@@ -55,7 +55,7 @@ export function AlertBanner({ sensorData, settings }: AlertBannerProps) {
         severity: 'danger',
         icon: Droplets,
       });
-    } else if (sensorData.soil_moisture < settings.soil_threshold_low) {
+    } else if (sensorData.soil_moisture != null && sensorData.soil_moisture < settings.soil_threshold_low) {
       newAlerts.push({
         id: 'soil-low',
         type: 'soil',

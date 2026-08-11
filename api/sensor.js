@@ -22,32 +22,11 @@ function normalizeRow(row) {
 
   return {
     id: row.id ?? undefined,
-    device_id: row.device_id ?? 'ESP32_001',
-    temperature: toNumber(row.temperature, 0),
-    humidity: toNumber(row.humidity, 0),
-    soil_moisture: toNumber(row.soil_moisture ?? row.soil, 0),
-    rain: toNumber(row.rain, 0),
-    score: toNumber(row.score ?? row.score_total, 0),
-    soil_score: toNumber(row.soil_score ?? row.skor_tanah, null),
-    vdp_score: toNumber(row.vdp_score ?? row.skor_vdp, null),
-    rain_score: toNumber(row.rain_score ?? row.skor_hujan, null),
-    vpd: toNumber(row.vpd, null),
-    duration_estimate: toNumber(row.duration_estimate ?? row.duration ?? row.durasi, null),
-    pump_status: toBoolean(row.pump_status, false),
-    led_status: toBoolean(row.led_status ?? row.feeder_status, false),
-    device_mode: row.device_mode === 'auto' || row.device_mode === 'manual' ? row.device_mode : null,
-    wifi_status: row.wifi_status ?? 'unknown',
-    threshold_kritis: toNumber(row.threshold_kritis, null),
-    threshold_atas: toNumber(row.threshold_atas, null),
-    threshold_bawah: toNumber(row.threshold_bawah, null),
-    watering_time: typeof row.watering_time === 'string' ? row.watering_time : null,
-    watering_duration: toNumber(row.watering_duration, null),
-    schedule_enabled: toBoolean(row.schedule_enabled, true),
-    formula_name: typeof row.formula_name === 'string' && row.formula_name.trim() ? row.formula_name.trim() : null,
-    formula_soil: typeof row.formula_soil === 'string' && row.formula_soil.trim() ? row.formula_soil.trim() : null,
-    formula_vpd: typeof row.formula_vpd === 'string' && row.formula_vpd.trim() ? row.formula_vpd.trim() : null,
-    formula_score: typeof row.formula_score === 'string' && row.formula_score.trim() ? row.formula_score.trim() : null,
-    soil_raw_dry: toNumber(row.soil_raw_dry, null),
+    node_id: toNumber(row.node_id, null),
+    device_id: (row.node_id ?? row.device_id) ? `node_${row.node_id ?? row.device_id}` : 'ESP32_001',
+    temperature: toNumber(row.temperature, null),
+    humidity: toNumber(row.humidity, null),
+    soil_moisture: toNumber(row.soil_moisture ?? row.soil, null),
     created_at: row.created_at ?? new Date().toISOString(),
   };
 }
@@ -103,41 +82,31 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      // Validate API Key
+      const apiKey = req.headers['x-api-key'];
+      const validApiKey = process.env.SECRET_API_KEY || 'NexaGrow_SecretKey_2026';
+
+      if (apiKey !== validApiKey) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+      }
+
       const body = req.body || {};
-      
-      const deviceId = body.node_id ? `node_${body.node_id}` : (body.device_id || 'ESP32_001');
-      
-      const payload = {
-        device_id: deviceId,
-        temperature: toNumber(body.temperature, 0),
-        humidity: toNumber(body.humidity, 0),
-        soil_moisture: toNumber(body.soil_moisture ?? body.soil, 0),
-        rain: toNumber(body.rain, 0),
-        score: toNumber(body.score ?? body.score_total, 0),
-        soil_score: toNumber(body.soil_score, null),
-        vdp_score: toNumber(body.vdp_score, null),
-        rain_score: toNumber(body.rain_score, null),
-        vpd: toNumber(body.vpd, null),
-        duration_estimate: toNumber(body.duration_estimate ?? body.duration, null),
-        pump_status: toBoolean(body.pump_status, false),
-        wifi_status: body.wifi_status || 'connected',
-        device_mode: body.device_mode === 'auto' || body.device_mode === 'manual' ? body.device_mode : null,
-        threshold_kritis: toNumber(body.threshold_kritis, null),
-        threshold_atas: toNumber(body.threshold_atas, null),
-        threshold_bawah: toNumber(body.threshold_bawah, null),
-        watering_time: typeof body.watering_time === 'string' ? body.watering_time : null,
-        watering_duration: toNumber(body.watering_duration, null),
-        schedule_enabled: toBoolean(body.schedule_enabled, true),
-        formula_name: typeof body.formula_name === 'string' && body.formula_name.trim() ? body.formula_name.trim() : null,
-        formula_soil: typeof body.formula_soil === 'string' && body.formula_soil.trim() ? body.formula_soil.trim() : null,
-        formula_vpd: typeof body.formula_vpd === 'string' && body.formula_vpd.trim() ? body.formula_vpd.trim() : null,
-        formula_score: typeof body.formula_score === 'string' && body.formula_score.trim() ? body.formula_score.trim() : null,
-        soil_raw_dry: toNumber(body.soil_raw_dry, null),
+
+      const nodeId = Number(body.node_id);
+      if (!Number.isInteger(nodeId) || (nodeId !== 1 && nodeId !== 2)) {
+        return res.status(400).json({ error: 'node_id must be 1 or 2' });
+      }
+
+      const sensorPayload = {
+        node_id: nodeId,
+        temperature: toNumber(body.temperature, null),
+        humidity: toNumber(body.humidity, null),
+        soil_moisture: toNumber(body.soil_moisture, null),
       };
 
       const { data, error } = await supabase
         .from('sensor_data')
-        .insert(payload)
+        .insert(sensorPayload)
         .select()
         .single();
 
@@ -146,11 +115,8 @@ export default async function handler(req, res) {
       // Publish to MQTT to update Web UI in real-time
       try {
         const brokerUrl = process.env.VITE_BROKER_URL || 'wss://a4e9379a555f47669c90f4c69b75eeda.s1.eu.hivemq.cloud:8884/mqtt';
-        // Vercel serverless function can use Secure WebSockets (wss://) or mqtts:// (port 8883)
-        // Here we use the WSS URL since it's already in env, but mqtts on 8883 is better for server-side
-        // Let's use mqtts to be safe on backend
         const mqttUrl = brokerUrl.replace('wss://', 'mqtts://').replace(':8884/mqtt', ':8883');
-        
+
         const client = mqtt.connect(mqttUrl, {
           username: process.env.VITE_MQTT_USERNAME || 'NexaGrowv2',
           password: process.env.VITE_MQTT_PASSWORD || 'NexaGrow12345',
@@ -168,16 +134,15 @@ export default async function handler(req, res) {
           };
 
           client.on('connect', () => {
-            const mqttPayload = { ...payload, node_id: body.node_id || undefined };
-            client.publish('sproutai/sensor/data', JSON.stringify(mqttPayload), { qos: 0 }, finish);
+            client.publish('sproutai/sensor/data', JSON.stringify(sensorPayload), { qos: 0 }, finish);
           });
 
           client.on('error', (err) => {
             console.error('[MQTT Publish Error]', err);
             finish();
           });
-          
-          setTimeout(finish, 5000); // 5 seconds timeout
+
+          setTimeout(finish, 5000);
         });
       } catch (err) {
         console.error('[MQTT Publish Exception]', err);
