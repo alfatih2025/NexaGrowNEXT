@@ -83,8 +83,20 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       // Validate API Key
-      const apiKey = String(req.headers['x-api-key'] || req.headers['X-Api-Key'] || req.headers['X-API-Key'] || '').trim();
-      const validApiKey = String(process.env.SECRET_API_KEY || 'NexaGrow_SecretKey_2026').trim();
+      const apiKey = String(
+        req.headers['x-api-key'] ||
+        req.headers['X-Api-Key'] ||
+        req.headers['X-API-Key'] ||
+        req.headers['x-api'] ||
+        ''
+      ).trim();
+
+      const validApiKey = String(
+        process.env.SECRET_API_KEY ||
+        process.env.API_AUTH_TOKEN ||
+        process.env.VITE_API_AUTH_TOKEN ||
+        'NexaGrow_SecretKey_2026'
+      ).trim();
 
       if (apiKey !== validApiKey) {
         return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
