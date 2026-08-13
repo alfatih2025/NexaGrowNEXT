@@ -1,4 +1,4 @@
-import supabase from '../src/lib/apiHelpers/_supabase.js';
+import supabase from './_supabaseClient.js';
 import { requireApiAuth } from '../src/lib/apiHelpers/_auth.js';
 
 function csvEscape(value) {

@@ -1,4 +1,4 @@
-import supabase from '../src/lib/apiHelpers/_supabase.js';
+import supabase from './_supabaseClient.js';
 import { requireApiAuth, authError } from '../src/lib/apiHelpers/_auth.js';
 import mqtt from 'mqtt'; // Pastikan kamu menginstal library ini (npm install mqtt)
 

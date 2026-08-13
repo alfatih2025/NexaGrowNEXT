@@ -1,4 +1,4 @@
-import supabase from '../src/lib/apiHelpers/_supabase.js';
+import supabase from './_supabaseClient.js';
 
 const DEFAULT_LOCATION_CODE = '33.74.07.1010';
 const WEATHER_LOCATION_MAP = {
