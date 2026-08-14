@@ -63,7 +63,7 @@ const sourceColors = {
   activity: 'bg-gray-100 text-gray-700',
   chat: 'bg-purple-100 text-purple-700',
   control: 'bg-blue-100 text-blue-700',
-  sensor: 'bg-cyan-100 text-cyan-700',
+  sensor: 'bg-blue-100 text-blue-700',
 };
 
 function safeString(value: unknown) {
@@ -234,16 +234,16 @@ export function LogsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <FileText className="h-6 w-6 text-emerald-600" />
-          <h2 className="text-2xl font-bold text-gray-800">Log & Analitik</h2>
+          <FileText className="h-6 w-6 text-green-600 dark:text-green-400" />
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Log & Analitik</h2>
         </div>
         <div className="flex flex-wrap gap-2">
 
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={refresh} className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200">
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={refresh} className="flex items-center gap-2 rounded-xl bg-white light-card px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-300">
             <RefreshCw size={16} />
             Muat Ulang
           </motion.button>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => exportFiltered('csv')} className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-600">
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => exportFiltered('csv')} className="flex items-center gap-2 rounded-xl bg-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-600">
             <Download size={16} />
             CSV
           </motion.button>
@@ -259,34 +259,34 @@ export function LogsPage() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gray-500">Total hari ini</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">{summary.total}</p>
+        <div className="rounded-2xl border border-gray-100 bg-white light-card p-4 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+          <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300">Total hari ini</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{summary.total}</p>
         </div>
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gray-500">Sensor</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">{summary.counts.sensor}</p>
+        <div className="rounded-2xl border border-gray-100 bg-white light-card p-4 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+          <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300">Sensor</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{summary.counts.sensor}</p>
         </div>
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gray-500">Kontrol</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">{summary.counts.control}</p>
+        <div className="rounded-2xl border border-gray-100 bg-white light-card p-4 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+          <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300">Kontrol</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{summary.counts.control}</p>
         </div>
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gray-500">Chat</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">{summary.counts.chat}</p>
+        <div className="rounded-2xl border border-gray-100 bg-white light-card p-4 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+          <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300">Chat</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{summary.counts.chat}</p>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-gray-100 bg-white light-card p-4 shadow-sm dark:bg-gray-900 dark:border-gray-800">
           <div className="mb-4 flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 ring-1 ring-gray-200">
-              <CalendarDays size={16} className="text-emerald-600" />
+            <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 ring-1 ring-gray-200 dark:bg-[#111827]">
+              <CalendarDays size={16} className="text-green-600 dark:text-green-400" />
               <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent text-sm outline-none" />
             </div>
 
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 ring-1 ring-gray-200">
-              <Filter size={16} className="text-emerald-600" />
+            <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 ring-1 ring-gray-200 dark:bg-[#111827]">
+              <Filter size={16} className="text-green-600 dark:text-green-400" />
               <select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)} className="bg-transparent text-sm outline-none">
                 <option value="all">Semua</option>
                 <option value="activity">Aktivitas</option>
@@ -301,9 +301,9 @@ export function LogsPage() {
 
           <div className="max-h-[760px] space-y-3 overflow-y-auto pr-1">
             {loading ? (
-              <div className="p-8 text-center text-gray-500">Memuat log...</div>
+              <div className="p-8 text-center text-gray-600 dark:text-gray-300">Memuat log...</div>
             ) : filteredItems.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">Tidak ada histori untuk tanggal ini.</div>
+              <div className="p-8 text-center text-gray-600 dark:text-gray-300">Tidak ada histori untuk tanggal ini.</div>
             ) : (
               filteredItems.map((item, idx) => {
                 const Icon = sourceIcons[item.bucket];
@@ -313,7 +313,7 @@ export function LogsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.02 }}
-                    className="rounded-2xl border border-gray-100 p-4 shadow-sm hover:bg-gray-50/70"
+                    className="rounded-2xl border border-gray-100 p-4 shadow-sm hover:bg-slate-100/70 dark:border-gray-800"
                   >
                     <div className="flex items-start gap-3">
                       <div className={`rounded-xl p-2 ${sourceColors[item.bucket]}`}>
@@ -321,16 +321,16 @@ export function LogsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-600">
+                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-[#111827] dark:text-gray-300">
                             {item.bucket}
                           </span>
-                          <span className="text-xs text-gray-400">{formatActivityTime(item.created_at)}</span>
-                          <span className="text-xs text-gray-400">{item.type}</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300">{formatActivityTime(item.created_at)}</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300">{item.type}</span>
                         </div>
-                        <p className="mt-1 font-semibold text-gray-900">{item.title}</p>
-                        <p className="text-sm text-gray-600">{item.message}</p>
+                        <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{item.title}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{item.message}</p>
                         {item.details && (
-                          <pre className="mt-3 overflow-auto rounded-xl bg-gray-50 p-3 text-[11px] text-gray-600">
+                          <pre className="mt-3 overflow-auto rounded-xl bg-slate-100 p-3 text-[11px] text-gray-600 dark:bg-[#111827] dark:text-gray-300">
                             {JSON.stringify(item.details, null, 2)}
                           </pre>
                         )}
@@ -344,9 +344,9 @@ export function LogsPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900">Analisa Harian</h3>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
+          <div className="rounded-2xl border border-gray-100 bg-white light-card p-5 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Analisa Harian</h3>
+            <div className="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-300">
               <p>
                 {summary.total > 0
                   ? `Ada ${summary.total} aktivitas pada ${selectedDate}.`
@@ -370,13 +370,13 @@ export function LogsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900">Ringkasan Sumber</h3>
+          <div className="rounded-2xl border border-gray-100 bg-white light-card p-5 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ringkasan Sumber</h3>
             <div className="mt-4 space-y-3 text-sm">
               {(['activity', 'chat', 'control', 'sensor'] as const).map((bucket) => (
-                <div key={bucket} className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2">
-                  <span className="capitalize text-gray-700">{bucket}</span>
-                  <span className="font-semibold text-gray-900">{summary.counts[bucket]}</span>
+                <div key={bucket} className="flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2 dark:bg-[#111827]">
+                  <span className="capitalize text-gray-700 dark:text-gray-300">{bucket}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{summary.counts[bucket]}</span>
                 </div>
               ))}
             </div>

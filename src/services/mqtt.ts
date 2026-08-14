@@ -7,8 +7,6 @@ const DEFAULT_MQTT_PASSWORD = 'NexaGrow12345';
 const BROKER_URL = (import.meta.env.VITE_BROKER_URL as string | undefined)?.trim() || DEFAULT_BROKER_URL;
 const MQTT_USERNAME = (import.meta.env.VITE_MQTT_USERNAME as string | undefined)?.trim() || DEFAULT_MQTT_USERNAME;
 const MQTT_PASSWORD = (import.meta.env.VITE_MQTT_PASSWORD as string | undefined)?.trim() || DEFAULT_MQTT_PASSWORD;
-const LARAVEL_API_URL = (import.meta.env.VITE_LARAVEL_API_URL as string | undefined)?.trim() || '';
-const API_AUTH_TOKEN = (import.meta.env.VITE_API_AUTH_TOKEN as string | undefined)?.trim() || 'NXG_2026_x7f83K2Lm91';
 
 const WEB_STATUS_TOPIC = 'sproutai/web/status';
 const DEVICE_STATUS_TOPIC = 'sproutai/esp32/status';
@@ -61,7 +59,6 @@ const SETTINGS_EVENT = 'nexagrow:settings-updated';
 
 let lastPersistedSensorJson: string | null = null;
 let lastPersistedSensorAt = 0;
-let lastForwardedToRailwayAt = 0;
 
 export interface MqttSensorSnapshot {
   device_id: string | null;
@@ -294,59 +291,6 @@ async function persistSensorDataToApi(payload: string, parsed: SensorDelta) {
   }
 }
 
-// Forward sensor data to Railway Laravel backend
-async function forwardSensorToRailway(parsed: SensorDelta) {
-  if (typeof window === 'undefined' || !LARAVEL_API_URL) return;
-
-  const now = Date.now();
-  
-  // Rate limit: max once every 30 seconds
-  if (now - lastForwardedToRailwayAt < SENSOR_PERSIST_INTERVAL_MS) {
-    return;
-  }
-
-  lastForwardedToRailwayAt = now;
-
-  // Only forward if we have node_id (required by Laravel API)
-  if (parsed.node_id === undefined || parsed.node_id === null) {
-    return;
-  }
-
-  const payload = {
-    node_id: parsed.node_id,
-    temperature: parsed.temperature ?? null,
-    humidity: parsed.humidity ?? null,
-    soil_moisture: parsed.soil_moisture ?? null,
-  };
-
-  try {
-    const response = await fetch(`${LARAVEL_API_URL}/api/sensor-data`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_AUTH_TOKEN,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.warn(
-        `[RAILWAY FORWARD] Status ${response.status}:`,
-        errorData.error || errorData.message || 'Unknown error'
-      );
-      return;
-    }
-
-    console.debug('[RAILWAY FORWARD] Sensor data sent successfully:', payload);
-  } catch (err) {
-    console.warn(
-      '[RAILWAY FORWARD] Failed to forward sensor data:',
-      err instanceof Error ? err.message : String(err)
-    );
-  }
-}
-
 function consumePendingMqttAcks(topic: string, payload: string) {
   for (const waiter of Array.from(pendingMqttAcks)) {
     try {
@@ -523,8 +467,6 @@ function updateFromTopic(topic: string, payload: string) {
     const parsed = normalizeJsonSensorPayload(payload);
     if (parsed) {
       setSensorSnapshot(parsed, topic, true);
-      // Forward sensor data to Railway backend
-      forwardSensorToRailway(parsed);
       setSnapshot({
         lastTopic: topic,
         lastPayload: payload,
@@ -575,10 +517,11 @@ function connectOnce() {
   client = mqtt.connect(BROKER_URL, {
     username: MQTT_USERNAME || undefined,
     password: MQTT_PASSWORD || undefined,
-    reconnectPeriod: 1000,
-    connectTimeout: 6000,
+    reconnectPeriod: 3000,
+    connectTimeout: 20000,
     clean: true,
-    keepalive: 15,
+    keepalive: 60,
+    reschedulePings: true,
     clientId: `nexagrow_web_${Math.random().toString(16).slice(2, 10)}`,
   });
 
@@ -626,12 +569,22 @@ function connectOnce() {
   });
 
   client.on('error', (err: Error) => {
-    console.error('[MQTT] error', err.message);
-    setSnapshot({
-      mqttConnected: false,
-      mqttConnecting: false,
-      mqttError: err.message,
-    });
+    const isTimeout = /keepalive|connack/i.test(err?.message || '');
+    if (isTimeout) {
+      console.warn('[MQTT] transient connection event:', err.message);
+      setSnapshot({
+        mqttConnected: false,
+        mqttConnecting: true,
+        mqttReconnecting: true,
+      });
+    } else {
+      console.error('[MQTT] error', err.message);
+      setSnapshot({
+        mqttConnected: false,
+        mqttConnecting: false,
+        mqttError: err.message,
+      });
+    }
   });
 
   client.on('message', (topic: string, message: Buffer) => {

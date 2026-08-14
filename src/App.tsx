@@ -46,7 +46,7 @@ function App() {
     if (typeof window === 'undefined') return 'dashboard';
     return resolvePageFromPath(window.location.pathname) as PageId;
   });
-  const { data: sensorData, history, loading: sensorLoading } = useSensorData(3000);
+  const { data: sensorData, history, loading: sensorLoading } = useSensorData(10000);
 
   const { status: deviceStatus } = useDeviceStatus(5000);
 
@@ -247,7 +247,7 @@ function App() {
 
   if (sensorLoading && !sensorData) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800">
+      <div className="min-h-screen">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -256,11 +256,11 @@ function App() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-            className="mb-6 h-20 w-20 rounded-full border-4 border-emerald-200 border-t-emerald-500"
+            className="mb-6 h-20 w-20 rounded-full border-4 border-green-200 border-t-green-500"
           />
           <div>
-            <h2 className="mb-2 text-2xl font-bold text-emerald-800">NexaGrow</h2>
-            <p className="text-emerald-600">Memuat data sensor...</p>
+            <h2 className="mb-2 text-2xl font-bold text-green-800">NexaGrow</h2>
+            <p className="text-green-600 dark:text-green-400">Memuat data sensor...</p>
           </div>
         </motion.div>
       </div>
@@ -272,7 +272,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen text-slate-800">
+    <div className="min-h-screen">
       <div className="flex min-h-screen">
         <Sidebar currentPage={currentPage} onPageChange={handlePageChange} />
 

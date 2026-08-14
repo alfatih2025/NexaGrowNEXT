@@ -9,7 +9,7 @@ export interface NodeSensorData {
   created_at: string;
 }
 
-const REFRESH_INTERVAL_MS = 5000;
+const REFRESH_INTERVAL_MS = 10000;
 
 function toNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
@@ -76,7 +76,7 @@ export function useMultiNodeSensorData() {
           }
         }
       } catch (e) {
-        console.error('Failed to fetch node data', e);
+        console.warn('Failed to fetch node data:', e instanceof Error ? e.message : e);
       } finally {
         if (!cancelled) setLoading(false);
       }

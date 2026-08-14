@@ -1,4 +1,4 @@
-import supabase from './_supabaseClient.js';
+import supabase from '../src/lib/apiHelpers/_supabase.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       const lastUpdate = new Date(row.created_at);
       const now = new Date();
       const diffMinutes = (now - lastUpdate) / (1000 * 60);
-      const isOnline = diffMinutes < 5;
+      const isOnline = isNaN(diffMinutes) ? true : diffMinutes < 15;
 
       return res.status(200).json({
         online: isOnline,

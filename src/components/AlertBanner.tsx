@@ -91,12 +91,12 @@ export function AlertBanner({ sensorData, settings }: AlertBannerProps) {
             <alert.icon className={`w-5 h-5 mt-0.5 ${alert.severity === 'danger' ? 'text-red-500' : 'text-amber-500'}`} />
             <div className="flex-1">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-medium text-gray-800">{alert.message}</p>
-                <button onClick={() => dismissAlert(alert.id)} className="text-gray-400 hover:text-gray-600">
+                <p className="font-medium text-gray-800 dark:text-gray-100">{alert.message}</p>
+                <button onClick={() => dismissAlert(alert.id)} className="text-gray-600 hover:text-gray-600 dark:text-gray-300">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">{alert.type}</p>
+              <p className="text-xs text-gray-600 mt-1 dark:text-gray-300">{alert.type}</p>
             </div>
           </div>
         </motion.div>

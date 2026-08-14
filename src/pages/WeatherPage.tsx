@@ -326,9 +326,9 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
   return (
     <div className="space-y-6">
       <div className="mb-2 flex items-center gap-3">
-        <CloudSun className="h-6 w-6 text-emerald-600" />
+        <CloudSun className="h-6 w-6 text-green-600 dark:text-green-400" />
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Prakiraan Cuaca</h2>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Prakiraan Cuaca</h2>
         </div>
       </div>
 
@@ -338,12 +338,12 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="space-y-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6"
+          className="space-y-4 rounded-2xl border border-gray-100 bg-white light-card p-5 shadow-sm sm:p-6 dark:bg-gray-900 dark:border-gray-800"
         >
-          <MapPin className="h-5 w-5 text-emerald-600" />
+          <MapPin className="h-5 w-5 text-green-600 dark:text-green-400" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Set lokasi prakiraan</h3>
-            <p className="text-sm text-gray-500">Kategori aktif: {currentCategoryLabel}</p>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Set lokasi prakiraan</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Kategori aktif: {currentCategoryLabel}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -354,8 +354,8 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
                 onClick={() => handleCategoryChange(category.id)}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                   selection.category === category.id
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-emerald-200'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-gray-200 bg-slate-100 text-gray-600 hover:border-green-200'
                 }`}
               >
                 {category.label}
@@ -365,12 +365,12 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Kota / Kabupaten</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Kota / Kabupaten</label>
               <div className="relative">
                 <select
                   value={selection.city}
                   onChange={(e) => handleCityChange(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full appearance-none rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 pr-10 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 dark:border-gray-800 dark:bg-[#111827]"
                 >
                   {cityOptions.map((item) => (
                     <option key={item} value={item}>
@@ -378,17 +378,17 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600 dark:text-gray-300" />
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Kecamatan</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Kecamatan</label>
               <div className="relative">
                 <select
                   value={selection.district}
                   onChange={(e) => handleDistrictChange(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full appearance-none rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 pr-10 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 dark:border-gray-800 dark:bg-[#111827]"
                 >
                   {districtOptions.map((item) => (
                     <option key={item} value={item}>
@@ -396,18 +396,18 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600 dark:text-gray-300" />
               </div>
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-gray-700">Kelurahan / Desa</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Kelurahan / Desa</label>
               <div className="relative">
                 <select
                   value={weatherCode}
                   onChange={(e) => handleVillageChange(e.target.value)}
                   disabled={isSemarang && loadingVillages && villageOptions.length === 0}
-                  className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-wait disabled:opacity-60"
+                  className="w-full appearance-none rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 pr-10 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 disabled:cursor-wait disabled:opacity-60 dark:border-gray-800 dark:bg-[#111827]"
                 >
                   {hasVillageOptions ? (
                     villageOptions.map((item) => (
@@ -423,23 +423,23 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
                     ))
                   )}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600 dark:text-gray-300" />
               </div>
             </div>
           </div>
 
 
 
-          <div className="flex flex-col gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-xl border border-green-100 bg-green-50 p-4 text-sm text-green-900 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-semibold">Lokasi yang disimpan</p>
-              <p className="mt-1 text-emerald-800">{selectedLabel}</p>
+              <p className="mt-1 text-green-800">{selectedLabel}</p>
             </div>
             <button
               type="button"
               onClick={handleSave}
               disabled={!canSave || saveState === 'saving'}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Save size={16} />
               {saveState === 'saving' ? 'Menyimpan...' : 'Simpan Lokasi'}
@@ -459,15 +459,15 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+            className="rounded-2xl border border-gray-100 bg-white light-card p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800"
           >
             <div className="mb-4 flex items-center gap-3">
-              <Navigation2 className="h-5 w-5 text-emerald-600" />
-              <h3 className="text-lg font-semibold text-gray-800">Ringkasan lokasi</h3>
+              <Navigation2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Ringkasan lokasi</h3>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4 text-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Wilayah terpilih</p>
-              <p className="mt-1 font-semibold text-slate-900">{selectedLabel}</p>
+            <div className="rounded-xl bg-slate-100 p-4 text-sm dark:bg-[#111827]">
+              <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-300">Wilayah terpilih</p>
+              <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{selectedLabel}</p>
             </div>
           </motion.div>
 
@@ -476,17 +476,17 @@ export function WeatherPage({ locationCode, settings, updateSettings }: WeatherP
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+            className="rounded-2xl border border-gray-100 bg-white light-card p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800"
           >
-            <h3 className="mb-4 text-lg font-semibold text-gray-800">Informasi Cuaca</h3>
+            <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-gray-100">Informasi Cuaca</h3>
             <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-              <div className="rounded-xl bg-emerald-50 p-4">
-                <h4 className="mb-2 font-semibold text-emerald-800">🌱 Dampak ke Pertanian</h4>
-                <p className="text-emerald-600">Data cuaca BMKG membantu menentukan jadwal penyiraman optimal dan memprediksi risiko hama.</p>
+              <div className="rounded-xl bg-green-50 p-4">
+                <h4 className="mb-2 font-semibold text-green-800">🌱 Dampak ke Pertanian</h4>
+                <p className="text-green-600 dark:text-green-400">Data cuaca BMKG membantu menentukan jadwal penyiraman optimal dan memprediksi risiko hama.</p>
               </div>
               <div className="rounded-xl bg-blue-50 p-4">
                 <h4 className="mb-2 font-semibold text-blue-800">💡 Tips Berdasarkan Cuaca</h4>
-                <p className="text-blue-600">AI Assistant akan memberikan rekomendasi perawatan berdasarkan kondisi cuaca terkini.</p>
+                <p className="text-blue-600 dark:text-blue-400">AI Assistant akan memberikan rekomendasi perawatan berdasarkan kondisi cuaca terkini.</p>
               </div>
             </div>
           </motion.div>

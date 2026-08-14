@@ -139,6 +139,14 @@ export function useSensorData(pollInterval = 1000) {
         if (merged) lastDataRef.current = merged;
         return merged;
       });
+
+      // Update history in real-time
+      setHistory((prev) => {
+        if (prev.length > 0 && prev[0].created_at === live.updatedAt) return prev;
+        const newRow = mergeSensorData(null, live);
+        if (!newRow) return prev;
+        return [newRow, ...prev].slice(0, 60);
+      });
     });
 
     return () => {

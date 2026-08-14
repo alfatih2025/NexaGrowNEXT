@@ -1,20 +1,9 @@
-import supabase from './_supabaseClient.js';
+import supabase from '../src/lib/apiHelpers/_supabase.js';
 import mqtt from 'mqtt';
 
 function toNumber(value, fallback = null) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function toBoolean(value, fallback = false) {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (['true', '1', 'on', 'yes', 'y'].includes(normalized)) return true;
-    if (['false', '0', 'off', 'no', 'n'].includes(normalized)) return false;
-  }
-  if (typeof value === 'number') return value !== 0;
-  return fallback;
 }
 
 function normalizeRow(row) {
@@ -35,13 +24,61 @@ const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // run cleanup at most once per hour
 let lastCleanupAt = 0;
 
 async function cleanupOldSensorData() {
-  const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-  const { error } = await supabase
-    .from('sensor_data')
-    .delete()
-    .lt('created_at', cutoff);
+  try {
+    const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    await supabase
+      .from('sensor_data')
+      .delete()
+      .lt('created_at', cutoff);
+  } catch (err) {
+    console.warn('[Cleanup Old Sensor Data Warning]', err?.message);
+  }
+}
 
-  if (error) throw error;
+// Publish to MQTT asynchronously in background without delaying HTTP response to ESP32 Gateway
+function publishToMqttAsync(data, nodeId, sensorPayload) {
+  try {
+    const brokerUrl = process.env.VITE_BROKER_URL || 'wss://a4e9379a555f47669c90f4c69b75eeda.s1.eu.hivemq.cloud:8884/mqtt';
+    const mqttUrl = brokerUrl.replace('wss://', 'mqtts://').replace(':8884/mqtt', ':8883');
+    const realtimePayload = normalizeRow(data) || {
+      ...sensorPayload,
+      device_id: `node_${nodeId}`,
+      created_at: new Date().toISOString(),
+    };
+
+    const client = mqtt.connect(mqttUrl, {
+      username: process.env.VITE_MQTT_USERNAME || 'NexaGrowv2',
+      password: process.env.VITE_MQTT_PASSWORD || 'NexaGrow12345',
+      connectTimeout: 3000,
+    });
+
+    const timeout = setTimeout(() => {
+      try { client.end(true); } catch {}
+    }, 4000);
+
+    client.on('connect', () => {
+      const payload = JSON.stringify(realtimePayload);
+      let pending = 2;
+      const done = () => {
+        pending--;
+        if (pending <= 0) {
+          clearTimeout(timeout);
+          try { client.end(); } catch {}
+        }
+      };
+
+      client.publish('sproutai/sensor/data', payload, { qos: 0, retain: false }, done);
+      client.publish(`sproutai/sensor/node/${nodeId}`, payload, { qos: 1, retain: true }, done);
+    });
+
+    client.on('error', (err) => {
+      console.warn('[MQTT Async Publish Error]', err?.message);
+      clearTimeout(timeout);
+      try { client.end(true); } catch {}
+    });
+  } catch (err) {
+    console.warn('[MQTT Async Exception]', err?.message);
+  }
 }
 
 export default async function handler(req, res) {
@@ -53,11 +90,11 @@ export default async function handler(req, res) {
   try {
     const now = Date.now();
     if (now - lastCleanupAt > CLEANUP_INTERVAL_MS) {
-      await cleanupOldSensorData();
       lastCleanupAt = now;
+      cleanupOldSensorData().catch(() => {});
     }
     if (req.method === 'GET') {
-      const { limit = 100, latest } = req.query;
+      const { limit = 100, latest, node_id } = req.query;
 
       if (latest === 'nodes' || latest === 'per-node') {
         const { data, error } = await supabase
@@ -79,22 +116,32 @@ export default async function handler(req, res) {
       }
 
       if (latest === 'true') {
-        const { data, error } = await supabase
+        let query = supabase
           .from('sensor_data')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1);
+          .order('created_at', { ascending: false });
+
+        if (node_id) {
+          query = query.eq('node_id', Number(node_id));
+        }
+
+        const { data, error } = await query.limit(1);
 
         if (error) throw error;
         const row = Array.isArray(data) ? data[0] : data;
         return res.status(200).json(row ? normalizeRow(row) : null);
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('sensor_data')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(parseInt(limit, 10) || 100);
+        .order('created_at', { ascending: false });
+
+      if (node_id) {
+        query = query.eq('node_id', Number(node_id));
+      }
+
+      const { data, error } = await query.limit(parseInt(limit, 10) || 100);
 
       if (error) throw error;
       return res.status(200).json(Array.isArray(data) ? data.map(normalizeRow).filter(Boolean) : []);
@@ -146,54 +193,8 @@ export default async function handler(req, res) {
 
       if (error) throw error;
 
-      // Publish to MQTT to update Web UI in real-time
-      try {
-        const brokerUrl = process.env.VITE_BROKER_URL || 'wss://a4e9379a555f47669c90f4c69b75eeda.s1.eu.hivemq.cloud:8884/mqtt';
-        const mqttUrl = brokerUrl.replace('wss://', 'mqtts://').replace(':8884/mqtt', ':8883');
-        const realtimePayload = normalizeRow(data) || {
-          ...sensorPayload,
-          device_id: `node_${nodeId}`,
-          created_at: new Date().toISOString(),
-        };
-
-        const client = mqtt.connect(mqttUrl, {
-          username: process.env.VITE_MQTT_USERNAME || 'NexaGrowv2',
-          password: process.env.VITE_MQTT_PASSWORD || 'NexaGrow12345',
-          connectTimeout: 4000,
-        });
-
-        await new Promise((resolve) => {
-          let resolved = false;
-          const finish = () => {
-            if (!resolved) {
-              resolved = true;
-              client.end();
-              resolve();
-            }
-          };
-
-          client.on('connect', () => {
-            const payload = JSON.stringify(realtimePayload);
-            let pending = 2;
-            const done = () => {
-              pending--;
-              if (pending <= 0) finish();
-            };
-
-            client.publish('sproutai/sensor/data', payload, { qos: 0, retain: false }, done);
-            client.publish(`sproutai/sensor/node/${nodeId}`, payload, { qos: 1, retain: true }, done);
-          });
-
-          client.on('error', (err) => {
-            console.error('[MQTT Publish Error]', err);
-            finish();
-          });
-
-          setTimeout(finish, 5000);
-        });
-      } catch (err) {
-        console.error('[MQTT Publish Exception]', err);
-      }
+      // Trigger MQTT publish asynchronously in background
+      publishToMqttAsync(data, nodeId, sensorPayload);
 
       return res.status(201).json(normalizeRow(data));
     }

@@ -56,7 +56,7 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
@@ -70,7 +70,7 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
           >
             {isOnline ? (
               <>
-                <Wifi size={15} className="text-emerald-500" />
+                <Wifi size={15} className="text-green-600 dark:text-green-400" />
                 <span className="hidden sm:inline">Sistem Online</span>
                 <span className="sm:hidden">Online</span>
               </>
@@ -88,7 +88,7 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setOpen((prev) => !prev)}
-              className="relative inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-slate-700 transition hover:bg-slate-50"
+              className="relative inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white light-card px-3 py-2 text-slate-700 transition hover:bg-slate-100 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-300"
               title="Notifikasi"
             >
               <Bell size={18} />
@@ -101,7 +101,7 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </motion.span>
               )}
-              <ChevronDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`text-slate-600 transition-transform ${open ? 'rotate-180' : ''}`} />
             </motion.button>
 
             <AnimatePresence>
@@ -110,16 +110,16 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
                   initial={{ opacity: 0, y: -8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  className="absolute right-0 mt-3 w-[min(92vw,24rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+                  className="absolute right-0 mt-3 w-[min(92vw,24rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white light-card shadow-2xl dark:bg-gray-900 dark:border-gray-800"
                 >
-                  <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                  <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-gray-800">
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">Histori Notifikasi</p>
-                      <p className="text-xs text-slate-500">{unreadCount} belum dibaca</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Histori Notifikasi</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">{unreadCount} belum dibaca</p>
                     </div>
                     <button
                       onClick={() => markAsRead()}
-                      className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                      className="inline-flex items-center gap-1 rounded-xl bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-100"
                     >
                       <CheckCheck size={14} />
                       Tandai semua
@@ -128,7 +128,7 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
 
                   <div className="max-h-[22rem] space-y-2 overflow-y-auto p-3">
                     {alerts.length === 0 && (
-                      <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500">
+                      <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-600 dark:border-gray-800 dark:text-slate-300">
                         Belum ada notifikasi.
                       </div>
                     )}
@@ -142,11 +142,11 @@ export function Header({ mqttStatus, currentPage, health }: HeaderProps) {
                             : 'border-amber-200 bg-amber-50'
                         }`}
                       >
-                        <p className="text-sm font-semibold text-slate-900">{alert.message}</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{alert.message}</p>
                         <div className="mt-1 flex items-center justify-between">
-                          <p className="text-xs text-slate-500">{alert.type}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-300">{alert.type}</p>
                           {!alert.read && (
-                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700">
                               Baru
                             </span>
                           )}

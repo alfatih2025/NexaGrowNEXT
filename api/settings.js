@@ -1,4 +1,4 @@
-import supabase from './_supabaseClient.js';
+import supabase from '../src/lib/apiHelpers/_supabase.js';
 import { requireApiAuth } from '../src/lib/apiHelpers/_auth.js';
 
 const DEFAULT_LOCATION_CODE = '33.74.07.1010';

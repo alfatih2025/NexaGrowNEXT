@@ -37,8 +37,8 @@ export function SensorChart({ data, type, title, color }: SensorChartProps) {
   const config = typeConfig[type];
 
   return (
-    <div className="glass-card bg-white dark:bg-slate-900/50 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">{title}</h3>
+    <div className="glass-card bg-white light-card dark:bg-slate-900/50 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -48,28 +48,28 @@ export function SensorChart({ data, type, title, color }: SensorChartProps) {
                 <stop offset="95%" stopColor={color} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeOpacity={0.5} />
             <XAxis
               dataKey="time"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
               tickLine={false}
-              axisLine={{ stroke: '#e5e5e5' }}
+              axisLine={{ stroke: "currentColor" }} className="text-slate-200 dark:text-slate-800"
             />
             <YAxis
               domain={[config.min, config.max]}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
               tickLine={false}
               axisLine={false}
               label={{ value: config.label, angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e5e5',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
                 borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)', color: 'var(--text-primary)',
               }}
-              labelStyle={{ color: '#666', fontSize: 12 }}
+              labelStyle={{ color: 'var(--text-secondary)', fontSize: 12 }}
               formatter={(value) => {
                 if (typeof value === 'number') {
                   return [`${value.toFixed(1)}`, config.label];

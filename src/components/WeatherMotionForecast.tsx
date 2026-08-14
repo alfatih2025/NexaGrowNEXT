@@ -11,10 +11,10 @@ interface WeatherMotionForecastProps {
 
 const weatherMeta: Record<string, { icon: typeof Sun; title: string; accent: string }> = {
   Cerah: { icon: Sun, title: 'Cerah', accent: 'from-amber-400 to-orange-500' },
-  'Cerah Berawan': { icon: CloudSun, title: 'Cerah Berawan', accent: 'from-sky-400 to-cyan-500' },
+  'Cerah Berawan': { icon: CloudSun, title: 'Cerah Berawan', accent: 'from-blue-400 to-blue-500' },
   Berawan: { icon: Cloud, title: 'Berawan', accent: 'from-slate-400 to-slate-600' },
   Hujan: { icon: CloudRain, title: 'Hujan', accent: 'from-blue-500 to-indigo-600' },
-  'Hujan Ringan': { icon: CloudRain, title: 'Hujan Ringan', accent: 'from-blue-400 to-sky-500' },
+  'Hujan Ringan': { icon: CloudRain, title: 'Hujan Ringan', accent: 'from-blue-400 to-blue-500' },
   'Hujan Lebat': { icon: CloudRain, title: 'Hujan Lebat', accent: 'from-indigo-600 to-violet-700' },
 };
 
@@ -30,16 +30,16 @@ function formatTime(datetime: string) {
 
 function ForecastSkeleton() {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-gray-100 bg-white light-card p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800">
       <div className="animate-pulse space-y-5">
         <div className="h-6 w-48 rounded bg-gray-200" />
         <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl bg-gray-100 p-5">
+          <div className="rounded-2xl bg-gray-100 p-5 dark:bg-[#111827]">
             <div className="h-4 w-28 rounded bg-gray-200" />
             <div className="mt-4 h-16 w-28 rounded bg-gray-200" />
             <div className="mt-3 h-4 w-40 rounded bg-gray-200" />
           </div>
-          <div className="rounded-2xl bg-gray-100 p-5">
+          <div className="rounded-2xl bg-gray-100 p-5 dark:bg-[#111827]">
             <div className="h-4 w-20 rounded bg-gray-200" />
             <div className="mt-3 grid grid-cols-2 gap-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -70,7 +70,7 @@ export function WeatherMotionForecast({ data, loading, error, locationLabel }: W
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+      className="overflow-hidden rounded-2xl border border-gray-100 bg-white light-card shadow-sm dark:bg-gray-900 dark:border-gray-800"
     >
       <div className={`bg-gradient-to-br ${currentMeta.accent} p-6 text-white`}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -130,10 +130,10 @@ export function WeatherMotionForecast({ data, loading, error, locationLabel }: W
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h4 className="text-lg font-semibold text-gray-800">Prakiraan per waktu</h4>
-            <p className="text-sm text-gray-500">Berubah mengikuti lokasi yang Anda simpan di halaman Cuaca.</p>
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Prakiraan per waktu</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Berubah mengikuti lokasi yang Anda simpan di halaman Cuaca.</p>
           </div>
-          <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+          <div className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
             Update otomatis
           </div>
         </div>
@@ -149,31 +149,31 @@ export function WeatherMotionForecast({ data, loading, error, locationLabel }: W
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.04 * index }}
-                  className="rounded-2xl border border-gray-100 bg-slate-50 p-4 shadow-sm"
+                  className="rounded-2xl border border-gray-100 bg-slate-100 p-4 shadow-sm dark:border-gray-800 dark:bg-[#111827]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">{formatTime(item.datetime)}</p>
-                      <p className="mt-1 font-semibold text-slate-900">{meta.title}</p>
+                      <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-300">{formatTime(item.datetime)}</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{meta.title}</p>
                     </div>
-                    <div className="rounded-xl bg-white p-2 text-slate-700 shadow-sm">
+                    <div className="rounded-xl bg-white light-card p-2 text-slate-700 shadow-sm dark:bg-gray-900 dark:border-gray-800 dark:text-gray-300">
                       <Icon size={18} />
                     </div>
                   </div>
 
                   <div className="mt-4 flex items-end gap-2">
-                    <span className="text-3xl font-bold text-slate-900">{item.temperature}</span>
-                    <span className="pb-1 text-sm font-medium text-slate-500">°C</span>
+                    <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{item.temperature}</span>
+                    <span className="pb-1 text-sm font-medium text-slate-600 dark:text-slate-300">°C</span>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-xl bg-white p-3">
-                      <p className="text-xs text-slate-500">Kelembapan</p>
-                      <p className="mt-1 font-semibold text-slate-900">{item.humidity}%</p>
+                    <div className="rounded-xl bg-white light-card p-3 dark:bg-gray-900 dark:border-gray-800">
+                      <p className="text-xs text-slate-600 dark:text-slate-300">Kelembapan</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{item.humidity}%</p>
                     </div>
-                    <div className="rounded-xl bg-white p-3">
-                      <p className="text-xs text-slate-500">Hujan</p>
-                      <p className="mt-1 font-semibold text-slate-900">{item.rain_chance}%</p>
+                    <div className="rounded-xl bg-white light-card p-3 dark:bg-gray-900 dark:border-gray-800">
+                      <p className="text-xs text-slate-600 dark:text-slate-300">Hujan</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{item.rain_chance}%</p>
                     </div>
                   </div>
                 </motion.div>
@@ -181,7 +181,7 @@ export function WeatherMotionForecast({ data, loading, error, locationLabel }: W
             })}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-5 text-sm text-gray-500">
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-slate-100 p-5 text-sm text-gray-600 dark:border-gray-800 dark:bg-[#111827] dark:text-gray-300">
             Data prakiraan per waktu belum tersedia untuk lokasi ini.
           </div>
         )}

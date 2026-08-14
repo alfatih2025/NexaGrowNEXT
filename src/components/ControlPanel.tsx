@@ -38,7 +38,7 @@ export function ControlPanel({ sensorData }: ControlPanelProps) {
     disabled?: boolean;
   }) {
     const variants = {
-      primary: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200',
+      primary: 'bg-green-600 hover:bg-green-700 shadow-green-200',
       danger: 'bg-red-500 hover:bg-red-600 shadow-red-200',
       warning: 'bg-amber-500 hover:bg-amber-600 shadow-amber-200',
       success: 'bg-slate-700 hover:bg-slate-800 shadow-slate-200',
@@ -62,7 +62,7 @@ export function ControlPanel({ sensorData }: ControlPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-3xl border border-slate-200 bg-white light-card p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Mode Operasi</h3>
           <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -70,13 +70,13 @@ export function ControlPanel({ sensorData }: ControlPanelProps) {
           </div>
         </div>
 
-        <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
+        <div className="rounded-2xl border-2 border-slate-200 bg-slate-100 p-4 dark:border-slate-800 dark:bg-slate-800/60">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-slate-200 p-3 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+            <div className="rounded-2xl bg-slate-200 p-3 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
               <Droplets size={24} />
             </div>
             <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Node Terhubung</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Node Terhubung</p>
               <p className="text-lg font-bold text-slate-700 dark:text-slate-100">
                 {sensorData?.node_id ?? 'N/A'}
               </p>
@@ -85,9 +85,9 @@ export function ControlPanel({ sensorData }: ControlPanelProps) {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-3xl border border-slate-200 bg-white light-card p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3 mb-4">
-          <Timer className="w-5 h-5 text-emerald-600" />
+          <Timer className="w-5 h-5 text-green-600 dark:text-green-400" />
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Kontrol Gateway</h3>
         </div>
 
@@ -108,7 +108,7 @@ export function ControlPanel({ sensorData }: ControlPanelProps) {
 
         <div className="mt-4">
           <div className="flex items-center gap-3 mb-3">
-            <Timer className="w-5 h-5 text-emerald-600" />
+            <Timer className="w-5 h-5 text-green-600 dark:text-green-400" />
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pompa Otomatis 10 Detik</h3>
           </div>
           <div className="grid grid-cols-1 gap-3">
@@ -119,7 +119,7 @@ export function ControlPanel({ sensorData }: ControlPanelProps) {
               variant="primary"
             />
           </div>
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
             Saat di set, pompa akan menyala selama 10 detik lalu otomatis mati.
           </p>
         </div>

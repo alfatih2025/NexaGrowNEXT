@@ -20,7 +20,7 @@ function StatTile({
   tone: 'good' | 'warning' | 'danger';
 }) {
   const toneMap = {
-    good: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200',
+    good: 'border-green-200 bg-green-50 text-green-800 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-200',
     warning: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200',
     danger: 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200',
   } as const;
@@ -45,19 +45,19 @@ export function MqttStatus() {
     <motion.section
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      className="rounded-3xl border border-slate-200 bg-white light-card p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Wifi size={18} className="text-emerald-600" />
+          <Wifi size={18} className="text-green-600 dark:text-green-400" />
           <div>
             <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status Sistem</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Ringkasan koneksi web, MQTT, dan ESP32</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">Ringkasan koneksi web, MQTT, dan ESP32</p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <div className={`rounded-full px-3 py-1 text-xs font-medium ${status.espOnline ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200' : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-200'}`}>
+          <div className={`rounded-full px-3 py-1 text-xs font-medium ${status.espOnline ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-200' : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-200'}`}>
             {status.espOnline ? 'ESP32 Online' : 'ESP32 Offline'}
           </div>
           <div className={`rounded-full px-3 py-1 text-xs font-medium ${status.mqttConnected ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-200' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200'}`}>
@@ -79,16 +79,16 @@ export function MqttStatus() {
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">Broker</p>
+        <div className="rounded-2xl bg-slate-100 p-3 dark:bg-slate-800">
+          <p className="text-xs text-slate-600 dark:text-slate-400">Broker</p>
           <p className="truncate font-mono text-xs text-slate-700 dark:text-slate-200">{status.brokerUrl.split('//')[1]?.split(':')[0] || 'N/A'}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">Last Message</p>
+        <div className="rounded-2xl bg-slate-100 p-3 dark:bg-slate-800">
+          <p className="text-xs text-slate-600 dark:text-slate-400">Last Message</p>
           <p className="font-mono text-xs text-slate-700 dark:text-slate-200">{status.lastMessageAt ? new Date(status.lastMessageAt).toLocaleTimeString('id-ID') : 'N/A'}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">Device</p>
+        <div className="rounded-2xl bg-slate-100 p-3 dark:bg-slate-800">
+          <p className="text-xs text-slate-600 dark:text-slate-400">Device</p>
           <p className="truncate font-semibold text-slate-700 dark:text-slate-200">{sensor?.device_id ?? 'N/A'}</p>
         </div>
       </div>

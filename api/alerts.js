@@ -1,4 +1,4 @@
-import supabase from './_supabaseClient.js';
+import supabase from '../src/lib/apiHelpers/_supabase.js';
 import { requireApiAuth } from '../src/lib/apiHelpers/_auth.js';
 
 async function sendEmailNotification({ recipientEmail, type, message, severity }) {

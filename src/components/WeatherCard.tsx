@@ -20,7 +20,7 @@ const weatherIcons: Record<string, typeof Sun> = {
 export function WeatherCard({ data, loading, error }: WeatherCardProps) {
   if (loading || !data) {
     return (
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm animate-pulse">
+      <div className="rounded-2xl border border-gray-100 bg-white light-card p-6 shadow-sm animate-pulse dark:bg-gray-900 dark:border-gray-800">
         <div className="h-40 rounded-xl bg-gray-200" />
       </div>
     );

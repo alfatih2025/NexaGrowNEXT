@@ -45,17 +45,17 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const sidebarContent = (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
+    <div className="flex h-full flex-col bg-white light-card dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
       <div className="flex items-center justify-between gap-3 p-6">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-emerald-600 dark:bg-cyan-600">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-green-600 dark:bg-blue-600">
             <img src={logo} alt="NexaGrow" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">NexaGrow</h1>
         </div>
         <button
           onClick={() => setMobileOpen(false)}
-          className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 lg:hidden"
+          className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 lg:hidden"
         >
           <X size={20} />
         </button>
@@ -74,14 +74,14 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
               }}
               className={`group flex w-full items-center gap-3.5 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all ${
                 isActive
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20 dark:bg-cyan-600 dark:shadow-cyan-900/20'
-                  : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-cyan-400'
+                  ? 'bg-green-600 text-white shadow-md shadow-green-900/20 dark:bg-blue-600 dark:shadow-blue-900/20'
+                  : 'text-slate-600 hover:bg-green-50 hover:text-green-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-600'
               }`}
             >
               <Icon
                 size={20}
                 className={`transition-colors ${
-                  isActive ? 'text-white' : 'text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-cyan-400'
+                  isActive ? 'text-white' : 'text-slate-600 group-hover:text-green-600 dark:group-hover:text-blue-600'
                 }`}
               />
               {item.label}
@@ -92,7 +92,7 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
 
       {/* Footer Info */}
       <div className="border-t border-slate-200/50 dark:border-slate-800/50 p-6 text-center">
-        <p className="text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+        <p className="text-[10px] font-bold tracking-wider text-slate-600 dark:text-slate-500 uppercase">
           NexaGrow Web v2.0
         </p>
       </div>
@@ -104,7 +104,7 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden inline-flex items-center justify-center rounded-2xl bg-emerald-600 dark:bg-cyan-600 text-white p-3 shadow-lg shadow-emerald-900/20 dark:shadow-cyan-900/20"
+        className="fixed top-4 left-4 z-50 lg:hidden inline-flex items-center justify-center rounded-2xl bg-green-600 dark:bg-blue-600 text-white p-3 shadow-lg shadow-green-900/20 dark:shadow-blue-900/20"
         aria-label="Buka menu"
       >
         <Menu size={22} />

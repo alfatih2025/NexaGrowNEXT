@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-// @ts-ignore
+// @ts-expect-error - internal helper
 import { getOpenRouterStatus, sendOpenRouterMessage } from './src/lib/apiHelpers/_openrouter.js';
 
 async function readBody(req: NodeJS.ReadableStream) {
@@ -11,54 +11,67 @@ async function readBody(req: NodeJS.ReadableStream) {
   }
 
   const raw = Buffer.concat(chunks).toString('utf8');
-  return raw ? JSON.parse(raw) : {};
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { raw };
+  }
 }
 
-function openRouterDevPlugin() {
+function apiDevPlugin() {
   return {
-    name: 'openrouter-dev-api',
+    name: 'api-dev-routes',
     configureServer(server: any) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
-        if (!req.url) {
+        if (!req.url || !req.url.startsWith('/api/')) {
           next();
           return;
         }
 
-        if (req.url.startsWith('/api/openrouter')) {
-          if (req.method === 'OPTIONS') {
-            res.statusCode = 204;
-            res.end();
-            return;
-          }
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
 
-          if (req.method === 'GET') {
-            const status = await getOpenRouterStatus(req.headers.origin);
-            res.statusCode = status.ok ? 200 : 503;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(status));
-            return;
-          }
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
 
-          if (req.method !== 'POST') {
-            res.statusCode = 405;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: 'Method not allowed' }));
-            return;
-          }
+        const urlObj = new URL(req.url, 'http://localhost');
+        const pathname = urlObj.pathname;
+        let apiName = pathname.replace(/^\/api\//, '').split('/')[0];
 
+        if (apiName === 'sensor-data') {
+          apiName = 'sensor';
+        }
+
+        if (apiName === 'openrouter') {
           try {
-            const body = await readBody(req);
-            const result = await sendOpenRouterMessage({
-              message: body.message,
-              history: Array.isArray(body.history) ? body.history : [],
-              sensorContext: body.sensorContext ?? null,
-              origin: req.headers.origin,
-            });
+            if (req.method === 'GET') {
+              const status = await getOpenRouterStatus(req.headers.origin);
+              res.statusCode = status.ok ? 200 : 503;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(status));
+              return;
+            }
 
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(result));
-          } catch (error) {
+            if (req.method === 'POST') {
+              const body = await readBody(req);
+              const result = await sendOpenRouterMessage({
+                message: body.message,
+                history: Array.isArray(body.history) ? body.history : [],
+                sensorContext: body.sensorContext ?? null,
+                origin: req.headers.origin,
+              });
+
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+              return;
+            }
+          } catch (error: any) {
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json');
             res.end(
@@ -66,34 +79,72 @@ function openRouterDevPlugin() {
                 error: error instanceof Error ? error.message : 'Unknown OpenRouter error',
               }),
             );
+            return;
           }
+        }
+
+        try {
+          const query: Record<string, string> = {};
+          urlObj.searchParams.forEach((val, key) => {
+            query[key] = val;
+          });
+          req.query = query;
+
+          if (req.method !== 'GET' && req.method !== 'HEAD') {
+            req.body = await readBody(req);
+          } else {
+            req.body = {};
+          }
+
+          if (!res.status) {
+            res.status = (code: number) => {
+              res.statusCode = code;
+              return res;
+            };
+          }
+          if (!res.json) {
+            res.json = (data: any) => {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(data));
+              return res;
+            };
+          }
+
+          const apiModule = await import(`./api/${apiName}.js`);
+          if (apiModule && typeof apiModule.default === 'function') {
+            await apiModule.default(req, res);
+            return;
+          }
+        } catch (e: any) {
+          console.warn(`[API Dev Plugin] Could not handle ${req.url}:`, e?.message);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: e?.message || 'Internal Server Error' }));
           return;
         }
 
-        next();
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: `API route /api/${apiName} not found` }));
+        return;
       });
     },
   };
 }
 
-export default defineConfig(async ({ mode }) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   Object.assign(process.env, env);
 
-  const plugins = [react(), tailwindcss(), openRouterDevPlugin()];
-  try {
-    // @ts-ignore
-    const m = await import('./.vite-source-tags.js');
-    plugins.push(m.sourceTags());
-  } catch {}
+  const plugins: any[] = [react(), tailwindcss()];
 
   return {
     plugins,
     server: {
       host: '0.0.0.0',
-      port: 5500,
+      port: 3000,
       strictPort: false,
-      allowedHosts: ['9c9h55dv-5500.asse.devtunnels.ms'],
+      allowedHosts: true,
     },
   };
 });

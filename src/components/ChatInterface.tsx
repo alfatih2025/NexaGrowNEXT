@@ -28,7 +28,7 @@ function renderInlineText(text: string) {
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return (
-        <strong key={`${index}-${part}`} className="font-semibold text-slate-900">
+        <strong key={`${index}-${part}`} className="font-semibold text-slate-900 dark:text-slate-100">
           {part.slice(2, -2)}
         </strong>
       );
@@ -67,7 +67,7 @@ function renderAssistantMessage(content: string) {
     if (trimmed.startsWith('## ')) {
       flushList();
       blocks.push(
-        <h4 key={`h2-${lineIndex}`} className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+        <h4 key={`h2-${lineIndex}`} className="text-sm font-semibold uppercase tracking-wide text-green-700">
           {trimmed.slice(3)}
         </h4>,
       );
@@ -77,7 +77,7 @@ function renderAssistantMessage(content: string) {
     if (trimmed.startsWith('### ')) {
       flushList();
       blocks.push(
-        <h5 key={`h3-${lineIndex}`} className="text-sm font-semibold text-slate-800">
+        <h5 key={`h3-${lineIndex}`} className="text-sm font-semibold text-slate-900 dark:text-slate-100">
           {trimmed.slice(4)}
         </h5>,
       );
@@ -90,8 +90,8 @@ function renderAssistantMessage(content: string) {
         listType = 'ul';
       }
       currentList.push(
-        <div key={`ul-${lineIndex}`} className="flex gap-2 text-sm leading-6 text-slate-700">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+        <div key={`ul-${lineIndex}`} className="flex gap-2 text-sm leading-6 text-slate-700 dark:text-gray-300">
+          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
           <span>{renderInlineText(trimmed.replace(/^[-*]\s+/, ''))}</span>
         </div>,
       );
@@ -106,8 +106,8 @@ function renderAssistantMessage(content: string) {
       const number = trimmed.match(/^(\d+[.)])\s+/)?.[1] ?? '';
       const text = trimmed.replace(/^\d+[.)]\s+/, '');
       currentList.push(
-        <div key={`ol-${lineIndex}`} className="flex gap-2 text-sm leading-6 text-slate-700">
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1 text-[11px] font-semibold text-slate-600">
+        <div key={`ol-${lineIndex}`} className="flex gap-2 text-sm leading-6 text-slate-700 dark:text-gray-300">
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1 text-[11px] font-semibold text-slate-600 dark:bg-[#111827] dark:text-slate-300">
             {number.replace(/[.)]/g, '')}
           </span>
           <span>{renderInlineText(text)}</span>
@@ -123,16 +123,16 @@ function renderAssistantMessage(content: string) {
       const [label, ...rest] = trimmed.split(':');
       const value = rest.join(':').trim();
       blocks.push(
-        <div key={`kv-${lineIndex}`} className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label.trim()}</div>
-          <div className="mt-1 text-sm text-slate-800">{renderInlineText(value || '-')}</div>
+        <div key={`kv-${lineIndex}`} className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 dark:border-gray-800">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{label.trim()}</div>
+          <div className="mt-1 text-sm text-slate-900 dark:text-slate-100">{renderInlineText(value || '-')}</div>
         </div>,
       );
       return;
     }
 
     blocks.push(
-      <p key={`p-${lineIndex}`} className="text-sm leading-6 text-slate-700">
+      <p key={`p-${lineIndex}`} className="text-sm leading-6 text-slate-700 dark:text-gray-300">
         {renderInlineText(trimmed)}
       </p>,
     );
@@ -195,9 +195,9 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
   const statusTone =
     connectionStatus.state === 'connected'
       ? {
-          dot: 'bg-emerald-500',
-          text: 'text-emerald-700',
-          chip: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+          dot: 'bg-green-500',
+          text: 'text-green-700',
+          chip: 'bg-green-100 text-green-700 border-green-200',
           icon: Wifi,
         }
       : connectionStatus.state === 'checking'
@@ -245,8 +245,8 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
     : 'flex h-[calc(100vh-200px)] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm';
 
   const headerClassName = isCompact
-    ? 'rounded-t-2xl border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50 p-3'
-    : 'rounded-t-2xl border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50 p-4';
+    ? 'rounded-t-2xl border-b border-gray-100 bg-gradient-to-r from-green-50 to-teal-50 p-3'
+    : 'rounded-t-2xl border-b border-gray-100 bg-gradient-to-r from-green-50 to-teal-50 p-4';
 
   const bodyClassName = isCompact ? 'space-y-3 overflow-y-auto p-3' : 'space-y-4 overflow-y-auto p-4 flex-1';
 
@@ -257,7 +257,7 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
       <div className={headerClassName}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 ${isCompact ? 'h-9 w-9' : 'h-10 w-10'}`}>
+            <div className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-teal-600 ${isCompact ? 'h-9 w-9' : 'h-10 w-10'}`}>
               <Bot className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
             </div>
             <div>
@@ -266,7 +266,7 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
                 <span className={`h-2 w-2 rounded-full ${statusTone.dot} ${connectionStatus.state === 'connected' ? 'animate-pulse' : ''}`} />
                 {connectionStatus.label}
               </p>
-              {!isCompact && <p className="mt-1 text-[11px] text-gray-500">{connectionStatus.detail}</p>}
+              {!isCompact && <p className="mt-1 text-[11px] text-gray-600 dark:text-gray-300">{connectionStatus.detail}</p>}
             </div>
           </div>
 
@@ -291,7 +291,7 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
               type="button"
               onClick={refreshConnectionStatus}
               disabled={loading}
-              className="rounded-lg border border-white/60 bg-white/80 p-2 text-gray-600 transition hover:bg-white disabled:opacity-50"
+              className="rounded-lg border border-white/60 bg-white/80 p-2 text-gray-600 transition hover:bg-white light-card disabled:opacity-50 dark:text-gray-300"
               title="Periksa ulang koneksi AI Online"
 
             >
@@ -302,17 +302,17 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
 
         {!isCompact && (
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-emerald-100 bg-white/80 p-3">
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Fase aktif</p>
-              <p className="mt-1 font-semibold text-gray-800">{phaseProfile.label}</p>
+            <div className="rounded-xl border border-green-100 bg-white/80 p-3">
+              <p className="text-[11px] uppercase tracking-wide text-gray-600 dark:text-gray-300">Fase aktif</p>
+              <p className="mt-1 font-semibold text-gray-800 dark:text-gray-100">{phaseProfile.label}</p>
             </div>
-            <div className="rounded-xl border border-emerald-100 bg-white/80 p-3">
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Rentang tanah</p>
-              <p className="mt-1 font-semibold text-gray-800">{formatRange(phaseProfile.soilRange)}</p>
+            <div className="rounded-xl border border-green-100 bg-white/80 p-3">
+              <p className="text-[11px] uppercase tracking-wide text-gray-600 dark:text-gray-300">Rentang tanah</p>
+              <p className="mt-1 font-semibold text-gray-800 dark:text-gray-100">{formatRange(phaseProfile.soilRange)}</p>
             </div>
-            <div className="rounded-xl border border-emerald-100 bg-white/80 p-3">
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Lokasi cuaca</p>
-              <p className="mt-1 text-xs leading-snug text-gray-600">{weatherLocationLabel || weatherData?.location}</p>
+            <div className="rounded-xl border border-green-100 bg-white/80 p-3">
+              <p className="text-[11px] uppercase tracking-wide text-gray-600 dark:text-gray-300">Lokasi cuaca</p>
+              <p className="mt-1 text-xs leading-snug text-gray-600 dark:text-gray-300">{weatherLocationLabel || weatherData?.location}</p>
             </div>
           </div>
         )}
@@ -320,12 +320,12 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
 
       <div className={bodyClassName}>
         {messages.length === 0 && (
-          <div className={isCompact ? 'rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-center' : 'py-10 text-center'}>
-            <div className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-emerald-50 ${isCompact ? 'h-14 w-14' : 'h-20 w-20'}`}>
-              <Leaf className={`text-emerald-500 ${isCompact ? 'h-7 w-7' : 'h-10 w-10'}`} />
+          <div className={isCompact ? 'rounded-2xl border border-green-100 bg-green-50/60 p-4 text-center' : 'py-10 text-center'}>
+            <div className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-green-50 ${isCompact ? 'h-14 w-14' : 'h-20 w-20'}`}>
+              <Leaf className={`text-green-600 ${isCompact ? 'h-7 w-7' : 'h-10 w-10'}`} />
             </div>
             <h4 className={`mb-2 font-semibold text-gray-700 ${isCompact ? 'text-sm' : 'text-lg'}`}>Selamat datang di NexaBot!</h4>
-            <p className={`mx-auto ${isCompact ? 'mb-4 text-xs' : 'mb-6 max-w-md text-gray-500'}`}>
+            <p className={`mx-auto ${isCompact ? 'mb-4 text-xs' : 'mb-6 max-w-md text-gray-600'}`}>
               Saya siap membantu memantau tanaman, membaca data cuaca aktif, dan memberi saran berdasarkan fase vegetatif atau generatif.
             </p>
             <div className={`flex flex-wrap justify-center ${isCompact ? 'gap-2' : 'gap-2'}`}>
@@ -336,7 +336,7 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
                     key={prompt.label}
                     type="button"
                     onClick={() => handleQuickPrompt(prompt.text)}
-                    className={`inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 font-medium text-emerald-700 transition hover:bg-emerald-100 ${isCompact ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'}`}
+                    className={`inline-flex items-center gap-2 rounded-full border border-green-100 bg-green-50 font-medium text-green-700 transition hover:bg-green-100 ${isCompact ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'}`}
                   >
                     <Icon size={14} />
                     {prompt.label}
@@ -358,7 +358,7 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
             >
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                  message.role === 'user' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-800'
+                  message.role === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800'
                 }`}
               >
                 {message.role === 'user' ? (
@@ -373,7 +373,7 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
 
         {loading && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-600 shadow-sm">Sedang berpikir...</div>
+            <div className="max-w-[80%] rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-600 shadow-sm dark:bg-[#111827] dark:text-gray-300">Sedang berpikir...</div>
           </div>
         )}
 
@@ -395,12 +395,12 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
             onChange={(e) => setInput(e.target.value)}
             placeholder="Tanyakan kondisi tanaman, cuaca, atau jadwal penyiraman..."
             rows={isCompact ? 1 : 2}
-            className={`flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${isCompact ? 'min-h-[44px]' : 'min-h-[56px]'}`}
+            className={`flex-1 resize-none rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 ${isCompact ? 'min-h-[44px]' : 'min-h-[56px]'}`}
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className={`inline-flex items-center gap-2 rounded-xl bg-emerald-600 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 ${isCompact ? 'h-[44px] px-4 text-sm' : 'h-[56px] px-5'}`}
+            className={`inline-flex items-center gap-2 rounded-xl bg-green-600 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 ${isCompact ? 'h-[44px] px-4 text-sm' : 'h-[56px] px-5'}`}
           >
             <Send size={16} />
             Kirim
