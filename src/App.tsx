@@ -62,9 +62,8 @@ function App() {
   const lastAlertSignatureRef = useRef<string>('');
 
   useEffect(() => {
-    if (!authLoading && !currentUser && currentPage === 'settings') {
-      setCurrentPage('login');
-    }
+    // No automatic redirection, all pages can be viewed.
+    // Restrictions are handled on a per-action basis.
   }, [authLoading, currentUser, currentPage]);
 
   useEffect(() => {

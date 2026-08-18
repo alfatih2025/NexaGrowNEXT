@@ -16,7 +16,7 @@ const phaseOptions = [
 export function SettingsPage() {
   const { currentUser, users, addUser, removeUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
-  const canEditSettings = true; // Both admin and invited users can edit settings
+  const canEditSettings = !!currentUser; // Both admin and invited users can edit settings
 
   const [newEmail, setNewEmail] = useState("");
   const [addUserError, setAddUserError] = useState("");
@@ -224,6 +224,13 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      {!canEditSettings && (
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-center gap-3 text-blue-700 dark:text-blue-300 shadow-sm">
+          <SettingsIcon className="w-5 h-5 shrink-0" />
+          <p className="text-sm"><strong>Mode Hanya-Baca:</strong> Anda harus login melalui panel Admin di navigasi untuk mengubah pengaturan.</p>
+        </div>
+      )}
+
       <div className="mb-6 flex items-center gap-3">
         <SettingsIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
         <div>
