@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "AllowedUser": {
+      "title": "Allowed User",
+      "description": "A user who is invited to access the application",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "The user's Google email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "user"],
+          "description": "The user's role"
+        },
+        "addedBy": {
+          "type": "string",
+          "description": "UID of the admin who added this user"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["email", "role", "addedBy", "createdAt"]
+    }
+  },
+  "firestore": {
+    "allowed_users/{docId}": {
+      "schema": {
+        "$ref": "#/entities/AllowedUser"
+      },
+      "description": "List of emails allowed to log in via Google Auth"
+    }
+  }
+}

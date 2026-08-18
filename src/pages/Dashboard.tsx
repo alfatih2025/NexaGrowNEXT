@@ -41,13 +41,8 @@ export function Dashboard({ sensorData, settings, weatherData }: DashboardProps)
               <Network className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               NexaGrow ESP-NOW
             </h1>
-<<<<<<< HEAD
             <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base max-w-xl">
               Platform smart agriculture berbasis IoT. Memantau 2 Wemos Node via ESP32 Gateway secara real-time.
-=======
-            <p className="text-slate-300 text-sm md:text-base max-w-xl">
-              Platform smart agriculture berbasis IoT. Memantau 2 Node via ESP32 Gateway secara real-time.
->>>>>>> 2a5af7d (rev)
             </p>
           </div>
           <div className="flex flex-col items-end gap-2 bg-white/60 dark:bg-slate-950/50 p-4 rounded-2xl border border-white/40 dark:border-white/10 backdrop-blur-md shadow-sm dark:shadow-none">
@@ -67,20 +62,17 @@ export function Dashboard({ sensorData, settings, weatherData }: DashboardProps)
       </div>
       </div>
 
-      {/* Node Cards */}
+            {/* Node Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <NodeCard 
           nodeName="Wemos Node 1" 
-          data={node1} 
-          status={isNode1Online ? 'online' : 'offline'} 
+          data={node1}
         />
         <NodeCard 
           nodeName="Wemos Node 2" 
-          data={node2} 
-          status={isNode2Online ? 'online' : 'offline'} 
+          data={node2}
         />
       </div>
-
       {/* Comparison Panel */}
       <div className="glass-card p-6 border border-slate-200 dark:border-slate-800">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
