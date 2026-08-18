@@ -62,7 +62,7 @@ function App() {
   const lastAlertSignatureRef = useRef<string>('');
 
   useEffect(() => {
-    if (!authLoading && !currentUser && currentPage !== 'login') {
+    if (!authLoading && !currentUser && currentPage === 'settings') {
       setCurrentPage('login');
     }
   }, [authLoading, currentUser, currentPage]);
@@ -312,10 +312,10 @@ function App() {
   return (
     <div className="min-h-screen">
       <div className="flex min-h-screen">
-        {currentUser && <Sidebar currentPage={currentPage} onPageChange={handlePageChange} />}
+        <Sidebar currentPage={currentPage} onPageChange={handlePageChange} />
 
         <div className="flex min-h-screen flex-1 flex-col">
-          {currentUser && <Header mqttStatus={mqttStatus} currentPage={currentPage} health={health} />}
+          <Header mqttStatus={mqttStatus} currentPage={currentPage} health={health} />
 
           <main className="flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6">
             <AnimatePresence mode="wait">

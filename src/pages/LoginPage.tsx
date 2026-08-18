@@ -38,7 +38,7 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Login dengan Google untuk mengakses kontrol panel pintar.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-5">
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -47,7 +47,8 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
             )}
             
             <button
-              type="submit"
+              type="button"
+              onClick={handleLogin}
               className="w-full py-4 px-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-semibold rounded-xl shadow border border-slate-200 dark:border-slate-700 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -58,7 +59,7 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
               </svg>
               Login dengan Google
             </button>
-          </form>
+          </div>
           
           <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
             Hanya admin dan pengguna yang diundang yang memiliki akses.

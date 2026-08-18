@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   signInWithPopup, 
+  signInWithRedirect,
   GoogleAuthProvider, 
   onAuthStateChanged, 
   signOut
@@ -116,12 +117,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
     setError(null);
     try {
       await signInWithPopup(auth, provider);
       return true;
     } catch (err: any) {
       console.error(err);
+      if (err.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, provider);
+          return true;
+        } catch (redirectErr: any) {
+          setError(redirectErr.message || 'Failed to login via redirect');
+          return false;
+        }
+      }
       setError(err.message || 'Failed to login');
       return false;
     }
