@@ -1,0 +1,22 @@
+mutation CreateSeedData @transaction {
+  user_insertMany(data: [
+    { email: "alice@example.com", displayName: "Alice" },
+    { email: "bob@example.com", displayName: "Bob" },
+    { email: "charlie@example.com", displayName: "Charlie" }
+  ])
+  project_insertMany(data: [
+    { name: "Project Alpha", description: "First project", owner: { id: "00000000-0000-0000-0000-000000000001" } },
+    { name: "Project Beta", description: "Second project", owner: { id: "00000000-0000-0000-0000-000000000002" } },
+    { name: "Project Gamma", description: "Third project", owner: { id: "00000000-0000-0000-0000-000000000003" } }
+  ])
+  projectMember_insertMany(data: [
+    { projectId: "00000000-0000-0000-0000-000000000001", userId: "00000000-0000-0000-0000-000000000001", role: "owner" },
+    { projectId: "00000000-0000-0000-0000-000000000001", userId: "00000000-0000-0000-0000-000000000002", role: "member" },
+    { projectId: "00000000-0000-0000-0000-000000000002", userId: "00000000-0000-0000-0000-000000000003", role: "admin" }
+  ])
+  task_insertMany(data: [
+    { title: "Design Phase", status: "TODO", projectId: "00000000-0000-0000-0000-000000000001", assignedUserId: "00000000-0000-0000-0000-000000000001" },
+    { title: "Development", status: "IN_PROGRESS", projectId: "00000000-0000-0000-0000-000000000001", assignedUserId: "00000000-0000-0000-0000-000000000002" },
+    { title: "Testing", status: "DONE", projectId: "00000000-0000-0000-0000-000000000002", assignedUserId: "00000000-0000-0000-0000-000000000003" }
+  ])
+}

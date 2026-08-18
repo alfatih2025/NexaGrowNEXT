@@ -38,7 +38,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const ROOT_ADMIN = 'princealf2025@gmail.com';
+const ROOT_ADMIN = import.meta.env.VITE_ROOT_ADMIN_EMAIL || 'princealf2025@gmail.com';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
