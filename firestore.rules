@@ -10,7 +10,7 @@ service cloud.firestore {
     }
 
     function isRootAdmin() {
-      return isSignedIn() && request.auth.token.email == 'princealf2025@gmail.com' && request.auth.token.email_verified == true;
+      return isSignedIn() && request.auth.token.email == 'alfatihwibowo264@gmail.com' && request.auth.token.email_verified == true;
     }
 
     function isAdmin() {
