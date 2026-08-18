@@ -41,8 +41,13 @@ export function Dashboard({ sensorData, settings, weatherData }: DashboardProps)
               <Network className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               NexaGrow ESP-NOW
             </h1>
+<<<<<<< HEAD
             <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base max-w-xl">
               Platform smart agriculture berbasis IoT. Memantau 2 Wemos Node via ESP32 Gateway secara real-time.
+=======
+            <p className="text-slate-300 text-sm md:text-base max-w-xl">
+              Platform smart agriculture berbasis IoT. Memantau 2 Node via ESP32 Gateway secara real-time.
+>>>>>>> 2a5af7d (rev)
             </p>
           </div>
           <div className="flex flex-col items-end gap-2 bg-white/60 dark:bg-slate-950/50 p-4 rounded-2xl border border-white/40 dark:border-white/10 backdrop-blur-md shadow-sm dark:shadow-none">
