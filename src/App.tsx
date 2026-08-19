@@ -216,6 +216,8 @@ function App() {
 
   const renderPage = () => {
     switch (currentPage) {
+      case 'login':
+        return <LoginPage />;
       case 'dashboard':
         return (
           <Dashboard
@@ -249,7 +251,6 @@ function App() {
     }
   };
 
-  
   // Tampilkan loading screen jika Auth masih diproses
   if (authLoading) {
     return (
@@ -265,16 +266,11 @@ function App() {
             className="mb-6 h-16 w-16 rounded-full border-4 border-slate-200 border-t-blue-500"
           />
           <div>
-            <h2 className="mb-2 text-xl font-bold text-slate-700">Verifikasi Login...</h2>
+            <h2 className="mb-2 text-xl font-bold text-slate-700">Memuat...</h2>
           </div>
         </motion.div>
       </div>
     );
-  }
-
-  // Jika belum login, tampilkan halaman login
-  if (!currentUser) {
-    return <LoginPage />;
   }
 
   if (sensorLoading && !sensorData) {

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, User, Sprout, Wifi, CalendarDays, SlidersHorizontal, Droplets, Thermometer, MapPinned } from 'lucide-react';
+import { Settings as SettingsIcon, User, Sprout, Wifi, CalendarDays, SlidersHorizontal, Droplets, Thermometer, MapPinned, Users, UserPlus, Trash2 } from 'lucide-react';
 import { useSettings, Settings as SettingsType } from '../hooks/useSettings';
 import { useControl } from '../hooks/useControl';
 import { useWeather } from '../hooks/useWeather';
+import { useAuth } from '../hooks/useAuth';
 import { getPhaseDefaults, getPlantPhaseProfile, formatRange } from '../lib/plantPhase';
 import { recordActivity } from '../lib/activityLog';
 
@@ -267,10 +268,11 @@ export function SettingsPage() {
             {phaseOptions.map((phase) => (
               <motion.button
                 key={phase.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                disabled={!isAdmin}
+                whileHover={{ scale: !isAdmin ? 1 : 1.02 }}
+                whileTap={{ scale: !isAdmin ? 1 : 0.98 }}
                 onClick={() => applyPhaseDefaults(phase.id)}
-                className={`rounded-xl border-2 p-4 transition-all ${currentPhase === phase.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-200'}`}
+                className={`rounded-xl border-2 p-4 transition-all ${!isAdmin ? 'cursor-not-allowed opacity-70' : ''} ${currentPhase === phase.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-200'}`}
               >
                 <span className="mb-2 block text-2xl">{phase.icon}</span>
                 <span className={`font-medium ${currentPhase === phase.id ? 'text-green-700' : 'text-gray-700'}`}>
