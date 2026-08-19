@@ -37,29 +37,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Fetch role from firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
+        try {
+          // Fetch role from firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setCurrentUser({
+              id: firebaseUser.uid,
+              username: data.email?.split('@')[0] || 'User',
+              email: data.email,
+              role: data.role as Role
+            });
+          } else {
+            // If no user doc, default to admin if first user, else user
+            const isFirstUser = firebaseUser.email === 'alfatihwibowo264@gmail.com'; // Admin
+            const role: Role = isFirstUser ? 'admin' : 'user';
+            
+            const newUser = {
+              id: firebaseUser.uid,
+              username: firebaseUser.email?.split('@')[0] || 'User',
+              email: firebaseUser.email || '',
+              role
+            };
+            await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+            setCurrentUser(newUser);
+          }
+        } catch (firestoreError) {
+          console.error('Firestore Error saat login:', firestoreError);
+          // Fallback jika Firestore gagal, tetap set user agar bisa login (hanya di memori)
           setCurrentUser({
-            id: firebaseUser.uid,
-            username: data.email?.split('@')[0] || 'User',
-            email: data.email,
-            role: data.role as Role
-          });
-        } else {
-          // If no user doc, default to admin if first user, else user
-          const isFirstUser = firebaseUser.email === 'alfatihwibowo264@gmail.com'; // Admin
-          const role: Role = isFirstUser ? 'admin' : 'user';
-          
-          const newUser = {
             id: firebaseUser.uid,
             username: firebaseUser.email?.split('@')[0] || 'User',
             email: firebaseUser.email || '',
-            role
-          };
-          await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
-          setCurrentUser(newUser);
+            role: firebaseUser.email === 'alfatihwibowo264@gmail.com' ? 'admin' : 'user'
+          });
         }
       } else {
         setCurrentUser(null);
