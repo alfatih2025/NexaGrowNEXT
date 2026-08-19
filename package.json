@@ -11,7 +11,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@firebase/eslint-plugin-security-rules": "^0.0.2",
     "@supabase/server": "^1.4.1",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.0",
@@ -32,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@firebase/eslint-plugin-security-rules": "^0.0.2",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

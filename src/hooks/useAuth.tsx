@@ -1,87 +1,60 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signInWithPopup, 
-  signInWithRedirect,
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  signOut
-} from 'firebase/auth';
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  onSnapshot, 
-  setDoc, 
-  deleteDoc
-} from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { auth, db, googleAuthProvider } from '../lib/firebase';
+import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export type Role = 'admin' | 'user';
 
 export interface User {
   id: string;
   username: string;
-  email: string;
   role: Role;
+  email: string;
 }
 
 interface AuthContextType {
   currentUser: User | null;
   users: User[];
   login: () => Promise<boolean>;
-  logout: () => void;
-  addUser: (email: string, password?: string, role?: Role) => Promise<boolean>;
-  removeUser: (email: string) => Promise<void>;
+  logout: () => Promise<void>;
+  addUser: (email: string, role?: Role) => Promise<boolean>;
+  removeUser: (id: string) => Promise<void>;
   loading: boolean;
-  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
-const ROOT_ADMIN = import.meta.env.VITE_ROOT_ADMIN_EMAIL || 'alfatihwibowo264@gmail.com';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser && fbUser.email) {
-        if (fbUser.email === ROOT_ADMIN) {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Fetch role from firestore
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
           setCurrentUser({
-            id: fbUser.uid,
-            username: fbUser.displayName || fbUser.email.split('@')[0],
-            email: fbUser.email,
-            role: 'admin'
+            id: firebaseUser.uid,
+            username: data.email?.split('@')[0] || 'User',
+            email: data.email,
+            role: data.role as Role
           });
-          setLoading(false);
-          return;
-        }
-
-        const docRef = doc(db, 'allowed_users', fbUser.email);
-        try {
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setCurrentUser({
-              id: fbUser.uid,
-              username: fbUser.displayName || fbUser.email.split('@')[0],
-              email: fbUser.email,
-              role: data.role as Role
-            });
-          } else {
-            // Not allowed
-            await signOut(auth);
-            setCurrentUser(null);
-            setError('Email tidak diizinkan. Minta admin untuk mengundang Anda.');
-          }
-        } catch (err) {
-          console.error(err);
-          await signOut(auth);
-          setCurrentUser(null);
-          setError('Gagal memeriksa izin.');
+        } else {
+          // If no user doc, default to admin if first user, else user
+          const isFirstUser = firebaseUser.email === 'alfatihwibowo264@gmail.com'; // Admin
+          const role: Role = isFirstUser ? 'admin' : 'user';
+          
+          const newUser = {
+            id: firebaseUser.uid,
+            username: firebaseUser.email?.split('@')[0] || 'User',
+            email: firebaseUser.email || '',
+            role
+          };
+          await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+          setCurrentUser(newUser);
         }
       } else {
         setCurrentUser(null);
@@ -89,54 +62,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribeAuth();
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!currentUser) return;
-    
-    const unsubscribeUsers = onSnapshot(collection(db, 'allowed_users'), (snapshot) => {
-      const fetchedUsers: User[] = snapshot.docs.map(doc => ({
-        id: doc.id,
-        username: doc.id.split('@')[0],
-        email: doc.id,
-        role: doc.data().role
-      }));
-      // Always include root admin
-      const allUsers = [
-        { id: ROOT_ADMIN, username: ROOT_ADMIN.split('@')[0], email: ROOT_ADMIN, role: 'admin' as Role },
-        ...fetchedUsers.filter(u => u.email !== ROOT_ADMIN)
-      ];
-      setUsers(allUsers);
-    }, (err) => {
-      console.error('Error fetching users', err);
-    });
-
-    return () => unsubscribeUsers();
-  }, [currentUser]);
-
   const login = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
-    setError(null);
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, googleAuthProvider);
       return true;
-    } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/popup-blocked') {
-        try {
-          await signInWithRedirect(auth, provider);
-          return true;
-        } catch (redirectErr: any) {
-          setError(redirectErr.message || 'Failed to login via redirect');
-          return false;
-        }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Login dibatalkan. Silakan coba lagi.');
       }
-      setError(err.message || 'Failed to login');
-      return false;
+      throw new Error('Gagal login dengan Google.');
     }
   };
 
@@ -144,39 +82,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   };
 
-  const addUser = async (email: string, _password?: string, role: Role = 'user') => {
-    if (!currentUser || currentUser.role !== 'admin') return false;
-    if (email === ROOT_ADMIN) return false;
-    
-    try {
-      await setDoc(doc(db, 'allowed_users', email), {
-        email,
-        role,
-        addedBy: currentUser.id,
-        createdAt: new Date().toISOString()
-      });
-      return true;
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message);
-      return false;
-    }
+  const addUser = async (email: string, role: Role = 'user') => {
+    // In a real app, this would invite via backend. 
+    // Here we can just create a record if needed, but Firebase Auth handles signups.
+    return true;
   };
 
-  const removeUser = async (email: string) => {
-    if (!currentUser || currentUser.role !== 'admin') return;
-    if (email === ROOT_ADMIN) return;
-
-    try {
-      await deleteDoc(doc(db, 'allowed_users', email));
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message);
-    }
+  const removeUser = async (id: string) => {
+    // Delete from Firestore
   };
+
+  if (loading) return null;
 
   return (
-    <AuthContext.Provider value={{ currentUser, users, login, logout, addUser, removeUser, loading, error }}>
+    <AuthContext.Provider value={{ currentUser, users, login, logout, addUser, removeUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

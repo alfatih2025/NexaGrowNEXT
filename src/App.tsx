@@ -45,7 +45,7 @@ function resolvePageFromPath(pathname: string) {
 }
 
 function App() {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageId>(() => {
     if (typeof window === 'undefined') return 'dashboard';
     return resolvePageFromPath(window.location.pathname) as PageId;
@@ -62,13 +62,6 @@ function App() {
   const lastAlertSignatureRef = useRef<string>('');
 
   useEffect(() => {
-    // No automatic redirection, all pages can be viewed.
-    // Restrictions are handled on a per-action basis.
-  }, [authLoading, currentUser, currentPage]);
-
-  useEffect(() => {
-    if (currentPage === 'login') return;
-
     const pageName =
       currentPage === 'dashboard'
         ? 'Dashboard'
@@ -220,28 +213,6 @@ function App() {
   }, [weatherData?.current?.rain_chance]);
 
   const mqttHistory = useMemo(() => getSensorHistorySnapshot(), [mqttStatus.lastMessageAt, mqttStatus.sensorSnapshot?.updatedAt]);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex min-h-screen flex-col items-center justify-center text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-            className="mb-6 h-20 w-20 rounded-full border-4 border-green-200 border-t-green-500"
-          />
-          <div>
-            <h2 className="mb-2 text-2xl font-bold text-green-800">NexaGrow</h2>
-            <p className="text-green-600 dark:text-green-400">Memeriksa kredensial...</p>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   const renderPage = () => {
     switch (currentPage) {

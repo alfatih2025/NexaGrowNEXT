@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Sprout, Wifi, CalendarDays, SlidersHorizontal, Droplets, Thermometer, MapPinned, Users, UserPlus, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, Sprout, Wifi, CalendarDays, SlidersHorizontal, Droplets, Thermometer, MapPinned } from 'lucide-react';
 import { useSettings, Settings as SettingsType } from '../hooks/useSettings';
 import { useControl } from '../hooks/useControl';
 import { useWeather } from '../hooks/useWeather';
-import { useAuth } from '../hooks/useAuth';
 import { getPhaseDefaults, getPlantPhaseProfile, formatRange } from '../lib/plantPhase';
 import { recordActivity } from '../lib/activityLog';
 
@@ -16,20 +15,16 @@ const phaseOptions = [
 export function SettingsPage() {
   const { currentUser, users, addUser, removeUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
-  const canEditSettings = !!currentUser; // Both admin and invited users can edit settings
 
-  const [newEmail, setNewEmail] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [addUserError, setAddUserError] = useState("");
-  const [isAddingUser, setIsAddingUser] = useState(false);
 
-  const handleAddUser = async (e: React.FormEvent) => {
+  const handleAddUser = (e) => {
     e.preventDefault();
-    if (!newEmail) { setAddUserError("Isi alamat email"); return; }
-    setIsAddingUser(true);
-    setAddUserError("");
-    const ok = await addUser(newEmail, undefined, "user");
-    setIsAddingUser(false);
-    if (ok) { setNewEmail(""); } else { setAddUserError("Gagal menambahkan, atau email sudah ada"); }
+    if (!newUsername || !newPassword) { setAddUserError("Isi semua field"); return; }
+    const ok = addUser(newUsername, newPassword, "user");
+    if (ok) { setNewUsername(""); setNewPassword(""); setAddUserError(""); } else { setAddUserError("Username sudah ada"); }
   };
 
   const { settings, loading, updateSettings } = useSettings();
@@ -38,6 +33,9 @@ export function SettingsPage() {
   const [formData, setFormData] = useState<Partial<SettingsType>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  // Status pengiriman MQTT ke ESP32, terpisah dari status simpan ke database.
+  // Sebelumnya hasil sendCommand() dibuang begitu saja sehingga kegagalan MQTT
+  // tidak pernah terlihat di UI.
   const [syncError, setSyncError] = useState<string | null>(null);
   const [wifiSsid, setWifiSsid] = useState('');
   const [wifiPassword, setWifiPassword] = useState('');
@@ -49,7 +47,11 @@ export function SettingsPage() {
   }, [settings, isDirty]);
 
   const weatherLocation = String(formData.location || settings?.location || '');
+
+  // Kode wilayah disimpan internal untuk API cuaca, namun tidak ditampilkan mentah di UI web.
   const { data: weatherData } = useWeather(weatherLocation);
+
+
   const currentPhase = (formData.plant_phase || settings?.plant_phase || 'vegetatif') as 'vegetatif' | 'generatif';
   const phaseProfile = getPlantPhaseProfile(currentPhase);
 
@@ -80,7 +82,9 @@ export function SettingsPage() {
     setSaveStatus('saving');
     setSyncError(null);
 
+    // Bangun payload dari formData dengan fallback ke settings yang ada
     const rawWateringTime = formData.watering_time || settings?.watering_time || '06:00';
+    // Bug #3 Fix: Validasi format HH:MM sebelum dipakai — jika tidak valid, fallback ke '06:00'
     const safeWateringTime = /^\d{2}:\d{2}$/.test(rawWateringTime) ? rawWateringTime : '06:00';
 
     const payload: Partial<SettingsType> = {
@@ -100,12 +104,28 @@ export function SettingsPage() {
       soil_threshold_critical: Number(formData.soil_threshold_critical ?? settings?.soil_threshold_critical ?? phaseProfile.criticalSoil),
     };
 
+    // Bug #2 Fix: Simpan ke API database dulu (tapi jangan blokir pengiriman MQTT jika gagal).
+    // updateSettings() dari hooks/useSettings tidak pernah throw — jika API gagal,
+    // ia return payload lokal sehingga normalized selalu valid.
     let normalized: SettingsType;
     try {
       normalized = await updateSettings(payload);
     } catch {
+      // Fallback ke payload lokal agar MQTT tetap bisa dikirim walau API bermasalah
       normalized = payload as SettingsType;
     }
+
+    // DEBUG: pastikan payload threshold valid dan benar-benar dikirim ke MQTT.
+    // Buka DevTools Console di browser untuk melihat output ini.
+    console.log('[SettingsPage] settings_sync payload', {
+      soil_threshold_low: normalized.soil_threshold_low,
+      soil_threshold_high: normalized.soil_threshold_high,
+      soil_threshold_critical: normalized.soil_threshold_critical,
+      watering_time: normalized.watering_time,
+      watering_duration: normalized.watering_duration,
+      watering_enabled: normalized.watering_enabled,
+      plant_phase: normalized.plant_phase,
+    });
 
     const weatherForecastSummary = weatherData?.forecast?.length
       ? weatherData.forecast
@@ -121,6 +141,9 @@ export function SettingsPage() {
       : null;
 
     try {
+      // Bug #2 Fix: Pengiriman MQTT ke ESP32 SELALU dijalankan, tidak bergantung pada
+      // keberhasilan API database di atas. sendCommand() sudah punya timeout internal
+      // (~10 detik) dan SELALU resolve dengan { success, error } — tidak pernah throw.
       const [settingsSyncResult, scheduleSetResult] = await Promise.all([
         sendCommand('settings_sync', undefined, {
           plant_phase: normalized.plant_phase,
@@ -178,6 +201,8 @@ export function SettingsPage() {
       setSaveStatus('saved');
 
       if (!mqttSynced) {
+        // Data sudah aman di database, tapi ESP32 belum tentu menerima
+        // perubahan ini. Tampilkan alasannya supaya tidak menyesatkan.
         const reason = settingsSyncResult.error || scheduleSetResult.error || 'MQTT tidak terkirim';
         setSyncError(`Tersimpan, tapi gagal dikirim ke ESP32 (${failedCommands.join(', ')}): ${reason}`);
       } else {
@@ -224,13 +249,6 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      {!canEditSettings && (
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-center gap-3 text-blue-700 dark:text-blue-300 shadow-sm">
-          <SettingsIcon className="w-5 h-5 shrink-0" />
-          <p className="text-sm"><strong>Mode Hanya-Baca:</strong> Anda harus login melalui panel Admin di navigasi untuk mengubah pengaturan.</p>
-        </div>
-      )}
-
       <div className="mb-6 flex items-center gap-3">
         <SettingsIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
         <div>
@@ -252,7 +270,6 @@ export function SettingsPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => applyPhaseDefaults(phase.id)}
-                disabled={!canEditSettings}
                 className={`rounded-xl border-2 p-4 transition-all ${currentPhase === phase.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-200'}`}
               >
                 <span className="mb-2 block text-2xl">{phase.icon}</span>
@@ -286,11 +303,11 @@ export function SettingsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-slate-600 dark:text-slate-300">Batas bawah</label>
-                  <input disabled={!canEditSettings} type="number" value={formData.temp_threshold_low ?? settings?.temp_threshold_low ?? phaseProfile.tempRange[0]} onChange={(e) => updateField('temp_threshold_low', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
+                  <input disabled={!isAdmin} type="number" value={formData.temp_threshold_low ?? settings?.temp_threshold_low ?? phaseProfile.tempRange[0]} onChange={(e) => updateField('temp_threshold_low', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-slate-600 dark:text-slate-300">Batas atas</label>
-                  <input disabled={!canEditSettings} type="number" value={formData.temp_threshold_high ?? settings?.temp_threshold_high ?? phaseProfile.tempRange[1]} onChange={(e) => updateField('temp_threshold_high', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
+                  <input disabled={!isAdmin} type="number" value={formData.temp_threshold_high ?? settings?.temp_threshold_high ?? phaseProfile.tempRange[1]} onChange={(e) => updateField('temp_threshold_high', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
                 </div>
               </div>
             </div>
@@ -303,11 +320,11 @@ export function SettingsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-slate-600 dark:text-slate-300">Batas bawah</label>
-                  <input disabled={!canEditSettings} type="number" value={formData.humidity_threshold_low ?? settings?.humidity_threshold_low ?? phaseProfile.humidityRange[0]} onChange={(e) => updateField('humidity_threshold_low', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
+                  <input disabled={!isAdmin} type="number" value={formData.humidity_threshold_low ?? settings?.humidity_threshold_low ?? phaseProfile.humidityRange[0]} onChange={(e) => updateField('humidity_threshold_low', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-slate-600 dark:text-slate-300">Batas atas</label>
-                  <input disabled={!canEditSettings} type="number" value={formData.humidity_threshold_high ?? settings?.humidity_threshold_high ?? phaseProfile.humidityRange[1]} onChange={(e) => updateField('humidity_threshold_high', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
+                  <input disabled={!isAdmin} type="number" value={formData.humidity_threshold_high ?? settings?.humidity_threshold_high ?? phaseProfile.humidityRange[1]} onChange={(e) => updateField('humidity_threshold_high', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
                 </div>
               </div>
               <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">Rentang aktif: {humidityLow}%–{humidityHigh}%</p>
@@ -321,15 +338,15 @@ export function SettingsPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-slate-600 dark:text-slate-300">Batas bawah</label>
-                  <input disabled={!canEditSettings} type="number" value={formData.soil_threshold_low ?? settings?.soil_threshold_low ?? phaseProfile.soilRange[0]} onChange={(e) => updateField('soil_threshold_low', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
+                  <input disabled={!isAdmin} type="number" value={formData.soil_threshold_low ?? settings?.soil_threshold_low ?? phaseProfile.soilRange[0]} onChange={(e) => updateField('soil_threshold_low', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-slate-600 dark:text-slate-300">Batas atas</label>
-                  <input disabled={!canEditSettings} type="number" value={formData.soil_threshold_high ?? settings?.soil_threshold_high ?? phaseProfile.soilRange[1]} onChange={(e) => updateField('soil_threshold_high', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
+                  <input disabled={!isAdmin} type="number" value={formData.soil_threshold_high ?? settings?.soil_threshold_high ?? phaseProfile.soilRange[1]} onChange={(e) => updateField('soil_threshold_high', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-slate-600 dark:text-slate-300">Kritis</label>
-                  <input disabled={!canEditSettings} type="number" value={formData.soil_threshold_critical ?? settings?.soil_threshold_critical ?? phaseProfile.criticalSoil} onChange={(e) => updateField('soil_threshold_critical', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
+                  <input disabled={!isAdmin} type="number" value={formData.soil_threshold_critical ?? settings?.soil_threshold_critical ?? phaseProfile.criticalSoil} onChange={(e) => updateField('soil_threshold_critical', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-white light-card px-4 py-3 dark:bg-gray-900 dark:border-gray-800" />
                 </div>
               </div>
             </div>
@@ -342,9 +359,9 @@ export function SettingsPage() {
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Kirim WiFi ke ESP32</h3>
           </div>
           <div className="space-y-3">
-            <input disabled={!canEditSettings} value={wifiSsid} onChange={(e) => setWifiSsid(e.target.value)} placeholder="SSID WiFi" className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
-            <input disabled={!canEditSettings} value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} placeholder="Password WiFi" type="password" className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
-            <button onClick={handleSendWifi} disabled={wifiStatus === 'sending' || controlLoading || !canEditSettings} className="w-full rounded-xl bg-green-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
+            <input disabled={!isAdmin} value={wifiSsid} onChange={(e) => setWifiSsid(e.target.value)} placeholder="SSID WiFi" className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
+            <input disabled={!isAdmin} value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} placeholder="Password WiFi" type="password" className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
+            <button onClick={handleSendWifi} disabled={wifiStatus === 'sending' || controlLoading || !isAdmin} className="w-full rounded-xl bg-green-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
               {wifiStatus === 'sending' ? 'Mengirim...' : 'Kirim ke ESP32'}
             </button>
             {wifiError && <p className="text-sm text-red-600">{wifiError}</p>}
@@ -359,15 +376,15 @@ export function SettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Waktu siram</label>
-              <input disabled={!canEditSettings} type="time" value={formData.watering_time || settings?.watering_time || '06:00'} onChange={(e) => updateField('watering_time', e.target.value)} className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
+              <input disabled={!isAdmin} type="time" value={formData.watering_time || settings?.watering_time || '06:00'} onChange={(e) => updateField('watering_time', e.target.value)} className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Durasi (detik)</label>
-              <input disabled={!canEditSettings} type="number" value={formData.watering_duration ?? settings?.watering_duration ?? 10} onChange={(e) => updateField('watering_duration', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
+              <input disabled={!isAdmin} type="number" value={formData.watering_duration ?? settings?.watering_duration ?? 10} onChange={(e) => updateField('watering_duration', Number(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 dark:border-gray-800 dark:bg-[#111827]" />
             </div>
           </div>
           <label className="mt-4 flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
-            <input disabled={!canEditSettings} type="checkbox" checked={formData.watering_enabled ?? settings?.watering_enabled ?? true} onChange={(e) => updateField('watering_enabled', e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 dark:text-green-400" />
+            <input disabled={!isAdmin} type="checkbox" checked={formData.watering_enabled ?? settings?.watering_enabled ?? true} onChange={(e) => updateField('watering_enabled', e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 dark:text-green-400" />
             Jadwal penyiraman aktif
           </label>
         </motion.div>
@@ -382,7 +399,7 @@ export function SettingsPage() {
             <span className="text-amber-600">{syncError}</span>
           )}
         </div>
-        <button onClick={handleSave} disabled={!canEditSettings} className={`rounded-xl px-6 py-3 font-semibold shadow-sm ${!canEditSettings ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"}`} >
+        <button onClick={handleSave} disabled={!isAdmin} className={`rounded-xl px-6 py-3 font-semibold shadow-sm ${!isAdmin ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"}`} >
           {saveStatus === 'saving' ? 'Menyimpan...' : 'Simpan Pengaturan'}
         </button>
       </div>
@@ -395,7 +412,7 @@ export function SettingsPage() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Manajemen Pengguna</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Undang alamat email Google yang diizinkan untuk mengakses dashboard ini.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Undang dan kelola akses pengguna lain.</p>
             </div>
           </div>
 
@@ -405,11 +422,15 @@ export function SettingsPage() {
                 <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Tambah Pengguna</h3>
                 {addUserError && <p className="text-red-500 text-xs font-semibold">{addUserError}</p>}
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Email Akun Google</label>
-                  <input type="email" required disabled={isAddingUser} value={newEmail} onChange={e => setNewEmail(e.target.value)} className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500" placeholder="user@gmail.com" />
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Username</label>
+                  <input disabled={!isAdmin} type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500" placeholder="nama_user" />
                 </div>
-                <button type="submit" disabled={isAddingUser} className="w-full py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
-                  <UserPlus size={16} /> {isAddingUser ? "Menyimpan..." : "Undang Pengguna"}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Password</label>
+                  <input disabled={!isAdmin} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500" placeholder="••••••••" />
+                </div>
+                <button type="submit" className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                  <UserPlus size={16} /> Undang Pengguna
                 </button>
               </form>
             </div>
@@ -417,18 +438,18 @@ export function SettingsPage() {
             <div className="lg:col-span-2 space-y-3">
               <h3 className="font-semibold text-slate-800 dark:text-slate-200">Daftar Pengguna</h3>
               {users.map(user => (
-                <div key={user.email} className="flex items-center justify-between p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
+                <div key={user.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-700 dark:text-slate-300">
-                      {user.email.charAt(0).toUpperCase()}
+                      {user.username.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-semibold text-slate-900 dark:text-white text-sm">{user.email}</div>
-                      <div className="text-xs text-slate-500">{user.role === 'admin' ? 'Administrator Utama' : 'Pengguna Biasa'}</div>
+                      <div className="font-semibold text-slate-900 dark:text-white text-sm">{user.username}</div>
+                      <div className="text-xs text-slate-500">{user.role === 'admin' ? 'Administrator' : 'Pengguna Biasa'}</div>
                     </div>
                   </div>
                   {user.role !== 'admin' && (
-                    <button onClick={() => removeUser(user.email)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
+                    <button onClick={() => removeUser(user.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
                       <Trash2 size={18} />
                     </button>
                   )}

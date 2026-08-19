@@ -1,12 +1,12 @@
 {
-  "projectId": "acoustic-shine-x98sv",
-  "appId": "1:651067487716:web:27aa61cf929a924d6e83f1",
-  "apiKey": "AIzaSyAHNsWuXL1Af412buprovUflk47HLWdmc8",
-  "authDomain": "acoustic-shine-x98sv.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-webnext-13380386-ca2c-45b9-9f60-bc2de466337b",
-  "storageBucket": "acoustic-shine-x98sv.firebasestorage.app",
-  "messagingSenderId": "651067487716",
+  "projectId": "nexa-69000",
+  "appId": "1:590792933420:web:c6e71583330963f5e45189",
+  "apiKey": "AIzaSyC8vQjjeFmCVT5Nx75El7_OUkRo-cqgs4c",
+  "authDomain": "nexa-69000.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-nexagrownext-f0f89408-0885-42ee-8d7c-31afbcd0836f",
+  "storageBucket": "nexa-69000.firebasestorage.app",
+  "messagingSenderId": "590792933420",
   "measurementId": "",
-  "oAuthClientId": "651067487716-nvi81vmhfk3etkqsv32ml4ambil3q9ro.apps.googleusercontent.com",
+  "oAuthClientId": "339553089175-7jlic2d7vca3nescusc0b6u9ealdqrej.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }
