@@ -82,8 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signInWithRedirect(auth, googleAuthProvider);
         return true;
       }
-      console.error('Login error:', error);
-      throw new Error('Gagal login dengan Google.');
+      console.error('Login error full:', error);
+      throw new Error(`Gagal login: ${error.code} - ${error.message}`);
     }
   };
 
