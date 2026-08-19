@@ -100,11 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signInWithPopup(auth, googleAuthProvider);
       return true;
     } catch (error: any) {
-      // Jika popup diblokir browser, otomatis fallback ke redirect
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+      // Jika popup diblokir browser (biasanya oleh adblock), otomatis fallback ke redirect
+      if (error.code === 'auth/popup-blocked') {
         console.warn('Popup diblokir, menggunakan redirect...');
         await signInWithRedirect(auth, googleAuthProvider);
         return true;
+      }
+      // Khusus jika user sengaja menutup popup, jangan tampilkan sebagai error merah, cukup kembalikan ke awal
+      if (error.code === 'auth/popup-closed-by-user') {
+         throw new Error('Proses login dibatalkan.');
       }
       console.error('Login error full:', error);
       setAuthError(`Gagal login: ${error.code} - ${error.message}`);
@@ -113,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    setAuthError('');
     await signOut(auth);
   };
 
