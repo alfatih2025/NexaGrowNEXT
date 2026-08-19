@@ -91,6 +91,13 @@ function App() {
     });
   }, [currentPage]);
 
+  // Otomatis pindah ke dashboard jika sudah login tapi masih di halaman login
+  useEffect(() => {
+    if (currentUser && currentPage === 'login') {
+      setCurrentPage('dashboard');
+    }
+  }, [currentUser, currentPage]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const path = currentPage === 'dashboard' ? '/' : `/${currentPage}`;
