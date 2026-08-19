@@ -17,15 +17,23 @@ export function SettingsPage() {
   const { currentUser, users, addUser, removeUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
 
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [addUserError, setAddUserError] = useState("");
 
-  const handleAddUser = (e) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUsername || !newPassword) { setAddUserError("Isi semua field"); return; }
-    const ok = addUser(newUsername, newPassword, "user");
-    if (ok) { setNewUsername(""); setNewPassword(""); setAddUserError(""); } else { setAddUserError("Username sudah ada"); }
+    if (!newEmail) { setAddUserError("Isi alamat email"); return; }
+    
+    // Set status
+    setAddUserError("Mengundang...");
+    const ok = await addUser(newEmail.toLowerCase().trim(), "admin");
+    
+    if (ok) { 
+      setNewEmail(""); 
+      setAddUserError(""); 
+    } else { 
+      setAddUserError("Email sudah terdaftar"); 
+    }
   };
 
   const { settings, loading, updateSettings } = useSettings();
@@ -421,24 +429,21 @@ export function SettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
               <form onSubmit={handleAddUser} className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Tambah Pengguna</h3>
+                <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Tambah Admin</h3>
+                <p className="text-xs text-slate-500 mb-2">Undang admin lain menggunakan email Google mereka.</p>
                 {addUserError && <p className="text-red-500 text-xs font-semibold">{addUserError}</p>}
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Username</label>
-                  <input disabled={!isAdmin} type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500" placeholder="nama_user" />
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Email Google</label>
+                  <input disabled={!isAdmin} type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500" placeholder="rekan@gmail.com" />
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Password</label>
-                  <input disabled={!isAdmin} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500" placeholder="••••••••" />
-                </div>
-                <button type="submit" className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
-                  <UserPlus size={16} /> Undang Pengguna
+                <button type="submit" disabled={!isAdmin} className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                  <UserPlus size={16} /> Undang Admin
                 </button>
               </form>
             </div>
 
             <div className="lg:col-span-2 space-y-3">
-              <h3 className="font-semibold text-slate-800 dark:text-slate-200">Daftar Pengguna</h3>
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200">Daftar Admin & Pengguna</h3>
               {users.map(user => (
                 <div key={user.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
                   <div className="flex items-center gap-3">
@@ -446,12 +451,13 @@ export function SettingsPage() {
                       {user.username.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-semibold text-slate-900 dark:text-white text-sm">{user.username}</div>
-                      <div className="text-xs text-slate-500">{user.role === 'admin' ? 'Administrator' : 'Pengguna Biasa'}</div>
+                      <div className="font-semibold text-slate-900 dark:text-white text-sm">{user.username} {user.email && <span className="text-xs font-normal text-slate-500 ml-1">({user.email})</span>}</div>
+                      <div className="text-xs text-slate-500">{user.role === 'admin' ? 'Administrator' : 'Pengguna Biasa'} {user.id.startsWith('invited_') && '(Belum Login)'}</div>
                     </div>
                   </div>
-                  {user.role !== 'admin' && (
-                    <button onClick={() => removeUser(user.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
+                  {/* Jangan izinkan admin menghapus alfatihwibowo264@gmail.com (Super Admin) atau dirinya sendiri */}
+                  {user.email !== 'alfatihwibowo264@gmail.com' && user.email !== currentUser?.email && (
+                    <button onClick={() => removeUser(user.email)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
                       <Trash2 size={18} />
                     </button>
                   )}

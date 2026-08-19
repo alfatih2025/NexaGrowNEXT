@@ -32,6 +32,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authError, setAuthError] = useState<string>('');
 
   useEffect(() => {
+    if (currentUser?.role !== 'admin') {
+      setUsers([]);
+      return;
+    }
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersData: User[] = [];
+      snapshot.forEach((d) => usersData.push(d.data() as User));
+      setUsers(usersData);
+    });
+    return () => unsubscribeUsers();
+  }, [currentUser?.role]);
+
+  useEffect(() => {
     // Tangkap hasil redirect login saat halaman dimuat kembali dari Google
     getRedirectResult(auth).then((result) => {
        if(result) {
@@ -43,42 +56,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
+      if (firebaseUser && firebaseUser.email) {
         try {
-          // Fetch role from firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          const docId = firebaseUser.email.toLowerCase();
+          const userDoc = await getDoc(doc(db, 'users', docId));
+          
           if (userDoc.exists()) {
             const data = userDoc.data();
             setCurrentUser({
               id: firebaseUser.uid,
-              username: data.email?.split('@')[0] || 'User',
+              username: data.username || data.email?.split('@')[0] || 'User',
               email: data.email,
               role: data.role as Role
             });
           } else {
-            // If no user doc, default to admin if first user, else user
-            const isFirstUser = firebaseUser.email === 'alfatihwibowo264@gmail.com'; // Admin
+            // Jika belum ada di database, cek apakah dia admin pertama
+            const isFirstUser = firebaseUser.email === 'alfatihwibowo264@gmail.com';
             const role: Role = isFirstUser ? 'admin' : 'user';
             
             const newUser = {
               id: firebaseUser.uid,
               username: firebaseUser.email?.split('@')[0] || 'User',
-              email: firebaseUser.email || '',
+              email: firebaseUser.email,
               role
             };
-            await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+            // Gunakan email sebagai ID agar mudah diundang
+            await setDoc(doc(db, 'users', docId), newUser);
             setCurrentUser(newUser);
           }
         } catch (firestoreError: any) {
           console.error('Firestore Error saat login:', firestoreError);
-          // Fallback jika Firestore gagal, tetap set user agar bisa login (hanya di memori)
           setCurrentUser({
             id: firebaseUser.uid,
             username: firebaseUser.email?.split('@')[0] || 'User',
             email: firebaseUser.email || '',
             role: firebaseUser.email === 'alfatihwibowo264@gmail.com' ? 'admin' : 'user'
           });
-          setAuthError(`Peringatan Firestore: ${firestoreError.message} (Login tetap dilanjutkan di memori)`);
+          setAuthError(`Peringatan Firestore: ${firestoreError.message} (Login dilanjutkan di memori)`);
         }
       } else {
         setCurrentUser(null);
@@ -96,17 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async () => {
     try {
       setAuthError('');
-      // Coba popup dulu (lebih reliable di SPA/Vercel)
       await signInWithPopup(auth, googleAuthProvider);
       return true;
     } catch (error: any) {
-      // Jika popup diblokir browser (biasanya oleh adblock), otomatis fallback ke redirect
       if (error.code === 'auth/popup-blocked') {
         console.warn('Popup diblokir, menggunakan redirect...');
         await signInWithRedirect(auth, googleAuthProvider);
         return true;
       }
-      // Khusus jika user sengaja menutup popup, jangan tampilkan sebagai error merah, cukup kembalikan ke awal
       if (error.code === 'auth/popup-closed-by-user') {
          throw new Error('Proses login dibatalkan.');
       }
@@ -121,11 +132,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   };
 
-  const addUser = async (email: string, role: Role = 'user') => {
-    return true;
+  const addUser = async (email: string, role: Role = 'admin') => {
+    try {
+      const docId = email.toLowerCase().trim();
+      const existing = await getDoc(doc(db, 'users', docId));
+      if (existing.exists()) return false;
+
+      await setDoc(doc(db, 'users', docId), {
+        id: `invited_${Date.now()}`,
+        username: email.split('@')[0],
+        email: docId,
+        role: role
+      });
+      return true;
+    } catch (e) {
+      console.error("Gagal menambah user:", e);
+      return false;
+    }
   };
 
-  const removeUser = async (id: string) => {
+  const removeUser = async (email: string) => {
+    try {
+      // Kita hapus berdasarkan ID (yang aslinya adalah email di sistem baru ini)
+      // Namun berjaga-jaga jika ID-nya UID lama, kita query berdasarkan ID dokumen
+      await deleteDoc(doc(db, 'users', email));
+    } catch (e) {
+      console.error("Gagal menghapus user:", e);
+    }
   };
 
   if (loading) return null;
