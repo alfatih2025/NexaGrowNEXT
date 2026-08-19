@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db, googleAuthProvider } from '../lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { signInWithRedirect, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export type Role = 'admin' | 'user';
@@ -67,13 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async () => {
     try {
-      await signInWithPopup(auth, googleAuthProvider);
+      // Menggunakan signInWithRedirect akan memindahkan halaman ke Google
+      // dan browser tidak akan memblokirnya
+      await signInWithRedirect(auth, googleAuthProvider);
       return true;
     } catch (error: any) {
       console.error('Login error:', error);
-      if (error.code === 'auth/popup-closed-by-user') {
-        throw new Error('Login dibatalkan. Silakan coba lagi.');
-      }
       throw new Error('Gagal login dengan Google.');
     }
   };
