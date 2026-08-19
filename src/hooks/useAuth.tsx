@@ -61,18 +61,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const docId = firebaseUser.email.toLowerCase();
           const userDoc = await getDoc(doc(db, 'users', docId));
           
+          const isOwner = docId.includes('alfatihwibowo') || docId.includes('princealf') || docId.includes('alfatih');
+
           if (userDoc.exists()) {
             const data = userDoc.data();
+            let role = data.role as Role;
+            
+            // Paksa jadikan admin jika ini adalah akun pemilik (meskipun sebelumnya tersimpan sebagai user)
+            if (isOwner && role !== 'admin') {
+              role = 'admin';
+              await setDoc(doc(db, 'users', docId), { role: 'admin' }, { merge: true });
+            }
+
             setCurrentUser({
               id: firebaseUser.uid,
               username: data.username || data.email?.split('@')[0] || 'User',
               email: data.email,
-              role: data.role as Role
+              role: role
             });
           } else {
             // Jika belum ada di database, cek apakah dia admin pertama
-            const isFirstUser = firebaseUser.email === 'alfatihwibowo264@gmail.com';
-            const role: Role = isFirstUser ? 'admin' : 'user';
+            const role: Role = isOwner ? 'admin' : 'user';
             
             const newUser = {
               id: firebaseUser.uid,
