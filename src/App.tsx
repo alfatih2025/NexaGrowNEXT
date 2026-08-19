@@ -45,7 +45,7 @@ function resolvePageFromPath(pathname: string) {
 }
 
 function App() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageId>(() => {
     if (typeof window === 'undefined') return 'dashboard';
     return resolvePageFromPath(window.location.pathname) as PageId;
@@ -250,6 +250,27 @@ function App() {
   };
 
   
+  // Tampilkan loading screen jika Auth masih diproses
+  if (authLoading) {
+    return (
+      <div className="min-h-screen">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex min-h-screen flex-col items-center justify-center text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+            className="mb-6 h-16 w-16 rounded-full border-4 border-slate-200 border-t-blue-500"
+          />
+          <div>
+            <h2 className="mb-2 text-xl font-bold text-slate-700">Verifikasi Login...</h2>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   // Jika belum login, tampilkan halaman login
   if (!currentUser) {
