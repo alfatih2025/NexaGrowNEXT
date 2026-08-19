@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db, googleAuthProvider } from '../lib/firebase';
-import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export type Role = 'admin' | 'user';
@@ -30,6 +30,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Tangkap hasil redirect login saat halaman dimuat kembali dari Google
+    getRedirectResult(auth).catch((error) => {
+      console.error('Redirect result error:', error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         // Fetch role from firestore
@@ -67,11 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async () => {
     try {
-      // Menggunakan signInWithRedirect akan memindahkan halaman ke Google
-      // dan browser tidak akan memblokirnya
-      await signInWithRedirect(auth, googleAuthProvider);
+      // Coba popup dulu (lebih reliable di SPA/Vercel)
+      await signInWithPopup(auth, googleAuthProvider);
       return true;
     } catch (error: any) {
+      // Jika popup diblokir browser, otomatis fallback ke redirect
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        console.warn('Popup diblokir, menggunakan redirect...');
+        await signInWithRedirect(auth, googleAuthProvider);
+        return true;
+      }
       console.error('Login error:', error);
       throw new Error('Gagal login dengan Google.');
     }
