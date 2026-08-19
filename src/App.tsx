@@ -216,8 +216,6 @@ function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'login':
-        return <LoginPage onLoginSuccess={() => setCurrentPage('dashboard')} />;
       case 'dashboard':
         return (
           <Dashboard
@@ -253,6 +251,11 @@ function App() {
 
   
 
+  // Jika belum login, tampilkan halaman login
+  if (!currentUser) {
+    return <LoginPage />;
+  }
+
   if (sensorLoading && !sensorData) {
     return (
       <div className="min-h-screen">
@@ -276,6 +279,10 @@ function App() {
   }
 
   const handlePageChange = (page: PageId) => {
+    // Jika user klik login di sidebar, logout dulu
+    if (page === 'login') {
+      return;
+    }
     setCurrentPage(page);
   };
 
