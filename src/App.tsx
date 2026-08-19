@@ -303,10 +303,6 @@ function App() {
   }
 
   const handlePageChange = (page: PageId) => {
-    // Jika user klik login di sidebar, logout dulu
-    if (page === 'login') {
-      return;
-    }
     setCurrentPage(page);
   };
 
