@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Leaf, AlertCircle } from 'lucide-react';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, authError } = useAuth();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,6 +21,8 @@ export function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  const displayError = authError || error;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 relative overflow-hidden">
@@ -42,10 +44,13 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-5">
-            {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <p>{error}</p>
+            {displayError && (
+              <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex flex-col gap-2 text-red-600 dark:text-red-400 text-sm break-words">
+                <div className="flex items-center gap-2 font-bold">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>Kesalahan:</span>
+                </div>
+                <p className="pl-6">{displayError}</p>
               </div>
             )}
             

@@ -20,6 +20,7 @@ interface AuthContextType {
   addUser: (email: string, role?: Role) => Promise<boolean>;
   removeUser: (id: string) => Promise<void>;
   loading: boolean;
+  authError: string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -28,11 +29,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string>('');
 
   useEffect(() => {
     // Tangkap hasil redirect login saat halaman dimuat kembali dari Google
-    getRedirectResult(auth).catch((error) => {
+    getRedirectResult(auth).then((result) => {
+       if(result) {
+         console.log("Redirect login berhasil:", result.user.email);
+       }
+    }).catch((error) => {
       console.error('Redirect result error:', error);
+      setAuthError(`Error Redirect: ${error.code} - ${error.message}`);
     });
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -62,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
             setCurrentUser(newUser);
           }
-        } catch (firestoreError) {
+        } catch (firestoreError: any) {
           console.error('Firestore Error saat login:', firestoreError);
           // Fallback jika Firestore gagal, tetap set user agar bisa login (hanya di memori)
           setCurrentUser({
@@ -71,10 +78,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: firebaseUser.email || '',
             role: firebaseUser.email === 'alfatihwibowo264@gmail.com' ? 'admin' : 'user'
           });
+          setAuthError(`Peringatan Firestore: ${firestoreError.message} (Login tetap dilanjutkan di memori)`);
         }
       } else {
         setCurrentUser(null);
       }
+      setLoading(false);
+    }, (error) => {
+      console.error('Auth state error:', error);
+      setAuthError(`Auth State Error: ${error.message}`);
       setLoading(false);
     });
 
@@ -83,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async () => {
     try {
+      setAuthError('');
       // Coba popup dulu (lebih reliable di SPA/Vercel)
       await signInWithPopup(auth, googleAuthProvider);
       return true;
@@ -94,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
       console.error('Login error full:', error);
+      setAuthError(`Gagal login: ${error.code} - ${error.message}`);
       throw new Error(`Gagal login: ${error.code} - ${error.message}`);
     }
   };
@@ -103,19 +117,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addUser = async (email: string, role: Role = 'user') => {
-    // In a real app, this would invite via backend. 
-    // Here we can just create a record if needed, but Firebase Auth handles signups.
     return true;
   };
 
   const removeUser = async (id: string) => {
-    // Delete from Firestore
   };
 
   if (loading) return null;
 
   return (
-    <AuthContext.Provider value={{ currentUser, users, login, logout, addUser, removeUser, loading }}>
+    <AuthContext.Provider value={{ currentUser, users, login, logout, addUser, removeUser, loading, authError }}>
       {children}
     </AuthContext.Provider>
   );
