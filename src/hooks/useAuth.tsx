@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db, googleAuthProvider } from '../lib/firebase';
-import { signInWithRedirect, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export type Role = 'admin' | 'user';
