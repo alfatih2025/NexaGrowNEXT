@@ -9,6 +9,7 @@ import { ControlPage } from './pages/ControlPage';
 import { WeatherPage } from './pages/WeatherPage';
 import { LogsPage } from './pages/LogsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AiRouterPage } from './pages/AiRouterPage';
 import { AboutPage } from './pages/AboutPage';
 import { useSensorData } from './hooks/useSensorData';
 import { useDeviceStatus } from './hooks/useDeviceStatus';
@@ -37,6 +38,7 @@ function resolvePageFromPath(pathname: string) {
     case 'weather':
     case 'logs':
     case 'settings':
+    case 'airouter':
     case 'about':
       return normalized;
     default:
@@ -77,7 +79,9 @@ function App() {
                   ? 'Log & Analitik'
                   : currentPage === 'settings'
                     ? 'Setting'
-                    : 'About';
+                    : currentPage === 'airouter'
+                      ? 'AI Config'
+                      : 'About';
 
     recordActivity({
       source: 'navigation',
@@ -245,6 +249,8 @@ function App() {
         return <LogsPage />;
       case 'settings':
         return <SettingsPage />;
+      case 'airouter':
+        return <AiRouterPage />;
       case 'about':
         return <AboutPage />;
       default:

@@ -142,8 +142,10 @@ function renderAssistantMessage(content: string) {
   return <div className="space-y-2">{blocks}</div>;
 }
 
+import { AiAnalysisView } from './AiAnalysisView';
+
 export function ChatInterface({ sensorData = null, settings = null, weatherData = null, variant = 'full' }: ChatInterfaceProps) {
-  const { messages, loading, error, sendMessage, clearMessages, connectionStatus, refreshConnectionStatus } = useChat();
+  const { messages, loading, error, analysisData, sendMessage, clearMessages, connectionStatus, refreshConnectionStatus } = useChat();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -233,11 +235,11 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
 
     const message = input;
     setInput('');
-    await sendMessage(message, sensorContext);
+    await sendMessage(message, sensorContext, settings);
   };
 
   const handleQuickPrompt = (text: string) => {
-    void sendMessage(text, sensorContext);
+    void sendMessage(text, sensorContext, settings);
   };
 
   const rootClassName = isCompact
@@ -319,6 +321,12 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
       </div>
 
       <div className={bodyClassName}>
+        {analysisData && !isCompact && (
+          <div className="mb-6">
+            <AiAnalysisView data={analysisData} sensorData={sensorData} />
+          </div>
+        )}
+
         {messages.length === 0 && (
           <div className={isCompact ? 'rounded-2xl border border-green-100 bg-green-50/60 p-4 text-center' : 'py-10 text-center'}>
             <div className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-green-50 ${isCompact ? 'h-14 w-14' : 'h-20 w-20'}`}>

@@ -11,6 +11,7 @@ import {
   Sprout,
   Zap,
   BookOpen,
+  Network,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -25,6 +26,7 @@ export type PageId =
   | 'weather'
   | 'logs'
   | 'settings'
+  | 'airouter'
   | 'about'
   | 'login';
 
@@ -41,6 +43,7 @@ const menuItems: { id: PageId; label: string; icon: typeof LayoutDashboard }[] =
   { id: 'weather', label: 'Cuaca', icon: CloudSun },
   { id: 'logs', label: 'Log & Analitik', icon: FileText },
   { id: 'settings', label: 'Pengaturan', icon: Settings },
+  { id: 'airouter', label: 'AI Config', icon: Network },
   { id: 'about', label: 'About', icon: BookOpen },
 ];
 
@@ -66,7 +69,7 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-4 pb-24 scrollbar-hide">
-        {menuItems.map((item) => {
+        {menuItems.filter(item => item.id !== 'airouter' || currentUser?.role === 'admin').map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
           return (

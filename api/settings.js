@@ -23,6 +23,16 @@ const DEFAULT_SETTINGS = {
   watering_enabled: true,
   user_name: 'Petani Cerdas',
   user_email: 'petani@sprout.id',
+  ai_mode: 'default',
+  ai_primary_provider: 'gemini',
+  ai_primary_model: 'gemini-2.5-flash',
+  ai_fallback_1_provider: 'openrouter',
+  ai_fallback_1_model: 'qwen/qwen-2.5-72b-instruct',
+  ai_fallback_2_provider: 'groq',
+  ai_fallback_2_model: 'llama-3.3-70b-versatile',
+  ai_strategy: 'priority',
+  ai_temperature: 0.4,
+  ai_max_tokens: 600,
 };
 
 function clampNumber(value, min, max, fallback) {
@@ -107,6 +117,16 @@ function normalizeSettings(input = {}) {
     user_email: String(obj.user_email || DEFAULT_SETTINGS.user_email).trim() || DEFAULT_SETTINGS.user_email,
     updated_at: new Date().toISOString(),
     soil_moisture_threshold: soilLow,
+    ai_mode: ['default', 'expert'].includes(obj.ai_mode) ? obj.ai_mode : DEFAULT_SETTINGS.ai_mode,
+    ai_primary_provider: ['gemini', 'openrouter', 'groq'].includes(obj.ai_primary_provider) ? obj.ai_primary_provider : DEFAULT_SETTINGS.ai_primary_provider,
+    ai_primary_model: String(obj.ai_primary_model || DEFAULT_SETTINGS.ai_primary_model).trim() || DEFAULT_SETTINGS.ai_primary_model,
+    ai_fallback_1_provider: ['gemini', 'openrouter', 'groq', 'none'].includes(obj.ai_fallback_1_provider) ? obj.ai_fallback_1_provider : DEFAULT_SETTINGS.ai_fallback_1_provider,
+    ai_fallback_1_model: String(obj.ai_fallback_1_model || DEFAULT_SETTINGS.ai_fallback_1_model).trim() || DEFAULT_SETTINGS.ai_fallback_1_model,
+    ai_fallback_2_provider: ['gemini', 'openrouter', 'groq', 'none'].includes(obj.ai_fallback_2_provider) ? obj.ai_fallback_2_provider : DEFAULT_SETTINGS.ai_fallback_2_provider,
+    ai_fallback_2_model: String(obj.ai_fallback_2_model || DEFAULT_SETTINGS.ai_fallback_2_model).trim() || DEFAULT_SETTINGS.ai_fallback_2_model,
+    ai_strategy: ['priority', 'fastest', 'cheapest', 'best_quality', 'automatic'].includes(obj.ai_strategy) ? obj.ai_strategy : DEFAULT_SETTINGS.ai_strategy,
+    ai_temperature: clampNumber(obj.ai_temperature, 0, 2, DEFAULT_SETTINGS.ai_temperature),
+    ai_max_tokens: clampNumber(obj.ai_max_tokens, 100, 8000, DEFAULT_SETTINGS.ai_max_tokens),
   };
 }
 
@@ -133,6 +153,16 @@ const SETTINGS_DB_COLUMNS = new Set([
   'user_email',
   'updated_at',
   'soil_moisture_threshold',
+  'ai_mode',
+  'ai_primary_provider',
+  'ai_primary_model',
+  'ai_fallback_1_provider',
+  'ai_fallback_1_model',
+  'ai_fallback_2_provider',
+  'ai_fallback_2_model',
+  'ai_strategy',
+  'ai_temperature',
+  'ai_max_tokens',
 ]);
 
 function filterSettingsForDatabase(input = {}) {
