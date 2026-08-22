@@ -14,6 +14,14 @@
     "FULLSTACK_PROJECT_REF": "",
     "FULLSTACK_RESTORE_API_URL": ""
   },
+  "build": {
+    "env": {
+      "VITE_SUPABASE_URL": "https://uhqpttkysypnknafyarw.supabase.co",
+      "VITE_SUPABASE_ANON_KEY": "sb_publishable_voGHASEfyiTdou_vsKFCDg_BYbQA59b",
+      "VITE_API_AUTH_TOKEN": "NXG_2026_x7f83K2Lm91",
+      "VITE_BMKG_URL": "https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=33.74.05.1001"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/:path*",
