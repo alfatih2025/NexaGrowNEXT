@@ -1,4 +1,4 @@
-import supabase from '../src/lib/apiHelpers/_supabase.js';
+import supabase from '../lib/apiHelpers/_supabase.js';
 import mqtt from 'mqtt';
 
 function toNumber(value, fallback = null) {

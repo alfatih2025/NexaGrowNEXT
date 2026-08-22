@@ -1,5 +1,5 @@
-import supabase from '../src/lib/apiHelpers/_supabase.js';
-import { requireApiAuth } from '../src/lib/apiHelpers/_auth.js';
+import supabase from '../lib/apiHelpers/_supabase.js';
+import { requireApiAuth } from '../lib/apiHelpers/_auth.js';
 
 async function sendEmailNotification({ recipientEmail, type, message, severity }) {
   const apiKey = (process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || '').trim();

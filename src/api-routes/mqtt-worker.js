@@ -1,5 +1,5 @@
 import mqtt from 'mqtt';
-import supabase from '../src/lib/apiHelpers/_supabase.js';
+import supabase from '../lib/apiHelpers/_supabase.js';
 
 // Konfigurasi API Laravel Railway
 const LARAVEL_API_URL = 'https://backendnexa-production-adce.up.railway.app/api/sensor-data';

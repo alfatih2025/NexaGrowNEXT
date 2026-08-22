@@ -1,5 +1,5 @@
-import supabase from '../src/lib/apiHelpers/_supabase.js';
-import { requireApiAuth, authError } from '../src/lib/apiHelpers/_auth.js';
+import supabase from '../lib/apiHelpers/_supabase.js';
+import { requireApiAuth, authError } from '../lib/apiHelpers/_auth.js';
 import mqtt from 'mqtt'; // Pastikan kamu menginstal library ini (npm install mqtt)
 
 // CATATAN UNTUK MAINTAINER: per pengecekan terakhir, SettingsPage.tsx TIDAK

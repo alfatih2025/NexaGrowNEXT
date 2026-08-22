@@ -1,5 +1,5 @@
-import { requireApiAuth, authError } from '../src/lib/apiHelpers/_auth.js';
-import supabase from '../src/lib/apiHelpers/_supabase.js';
+import { requireApiAuth, authError } from '../lib/apiHelpers/_auth.js';
+import supabase from '../lib/apiHelpers/_supabase.js';
 
 const OPENROUTER_API_KEY =
   process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY;

@@ -1,5 +1,5 @@
-import supabase from '../src/lib/apiHelpers/_supabase.js';
-import { requireApiAuth } from '../src/lib/apiHelpers/_auth.js';
+import supabase from '../lib/apiHelpers/_supabase.js';
+import { requireApiAuth } from '../lib/apiHelpers/_auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

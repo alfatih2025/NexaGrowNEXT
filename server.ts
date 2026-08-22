@@ -2,18 +2,18 @@ import express from 'express';
 import path from 'path';
 
 // Statically import all API routes for esbuild compatibility
-import sensorApi from './api/sensor.js';
-import alertsApi from './api/alerts.js';
-import chatApi from './api/chat.js';
-import controlApi from './api/control.js';
-import deviceStatusApi from './api/device-status.js';
-import exportApi from './api/export.js';
-import logsApi from './api/logs.js';
-import openrouterApi from './api/openrouter.js';
-import settingsApi from './api/settings.js';
-import weatherLocationsApi from './api/weather-locations.js';
-import weatherApi from './api/weather.js';
-import { startMqttWorker } from './api/mqtt-worker.js';
+import sensorApi from './src/api-routes/sensor.js';
+import alertsApi from './src/api-routes/alerts.js';
+import chatApi from './src/api-routes/chat.js';
+import controlApi from './src/api-routes/control.js';
+import deviceStatusApi from './src/api-routes/device-status.js';
+import exportApi from './src/api-routes/export.js';
+import logsApi from './src/api-routes/logs.js';
+import openrouterApi from './src/api-routes/openrouter.js';
+import settingsApi from './src/api-routes/settings.js';
+import weatherLocationsApi from './src/api-routes/weather-locations.js';
+import weatherApi from './src/api-routes/weather.js';
+import { startMqttWorker } from './src/api-routes/mqtt-worker.js';
 
 async function startServer() {
   const app = express();

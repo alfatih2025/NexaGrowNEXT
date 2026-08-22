@@ -110,7 +110,7 @@ function apiDevPlugin() {
             };
           }
 
-          const apiModule = await import(`./api/${apiName}.js`);
+          const apiModule = await import(`./src/api-routes/${apiName}.js`);
           if (apiModule && typeof apiModule.default === 'function') {
             await apiModule.default(req, res);
             return;
