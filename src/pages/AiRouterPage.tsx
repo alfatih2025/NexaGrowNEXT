@@ -135,7 +135,7 @@ export function AiRouterPage() {
               <Settings2 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className={`font-bold text-lg ${isExpert ? 'text-purple-900 dark:text-purple-400' : 'text-slate-700 dark:text-slate-300'}`}>Mode Expert (Opsional)</h3>
+              <h3 className={`font-bold text-lg ${isExpert ? 'text-purple-900 dark:text-purple-400' : 'text-slate-700 dark:text-slate-300'}`}>Mode Expert</h3>
               <p className="text-sm text-slate-500 mt-1">
                 Menu khusus untuk mengonfigurasi provider primer, fallback, dan model LLM secara manual.
               </p>
