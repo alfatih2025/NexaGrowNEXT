@@ -10,6 +10,7 @@ import deviceStatusApi from './src/api-routes/device-status.js';
 import exportApi from './src/api-routes/export.js';
 import logsApi from './src/api-routes/logs.js';
 import openrouterApi from './src/api-routes/openrouter.js';
+import airouterApi from './src/api-routes/airouter.js';
 import settingsApi from './src/api-routes/settings.js';
 import weatherLocationsApi from './src/api-routes/weather-locations.js';
 import weatherApi from './src/api-routes/weather.js';
@@ -73,6 +74,7 @@ async function startServer() {
   app.all('/api/export', apiHandler(exportApi));
   app.all('/api/logs', apiHandler(logsApi));
   app.all('/api/openrouter', apiHandler(openrouterApi));
+  app.all('/api/airouter', apiHandler(airouterApi));
   app.all('/api/settings', apiHandler(settingsApi));
   app.all('/api/weather-locations', apiHandler(weatherLocationsApi));
   app.all('/api/weather', apiHandler(weatherApi));
