@@ -1,6 +1,7 @@
 import { buildApiHeaders } from '../lib/apiAuth';
 import { useState, useEffect, useCallback } from 'react';
 import type { SensorSnapshotContext } from '../services/openrouter';
+import type { DailyHistory } from './useDailyHistory';
 
 export interface ChatMessage {
   id: number;
@@ -56,6 +57,7 @@ export function useChat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<any | null>(null);
+  const [yesterdayHistory, setYesterdayHistory] = useState<DailyHistory | null>(null);
   const [connectionStatus, setConnectionStatus] = useState({
     state: 'checking',
     label: 'Memeriksa AI Router',
@@ -84,6 +86,25 @@ export function useChat() {
       }
     } catch {
       setConnectionStatus({ state: 'error', label: 'AI Router Offline', detail: 'Gagal menghubungi server' });
+    }
+  }, []);
+
+  /**
+   * Load yesterday's history untuk konteks AI
+   */
+  const loadYesterdayHistory = useCallback(async () => {
+    try {
+      const response = await fetch('/api/chat-daily-history?target=yesterday', {
+        headers: buildApiHeaders(),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setYesterdayHistory(result.data as DailyHistory);
+      }
+    } catch (err) {
+      // Silently fail - history tidak wajib
+      console.warn('Failed to load yesterday history:', err);
     }
   }, []);
 
@@ -131,6 +152,11 @@ export function useChat() {
             history: optimisticMessages.map(m => ({ role: m.role, content: m.content })),
             sensorContext: normalizeSensorContext(sensorContext),
             aiSettings: settings,
+            yesterdayHistory: yesterdayHistory ? {
+              summary: yesterdayHistory.summary,
+              insights: yesterdayHistory.insights,
+              recommendations: yesterdayHistory.recommendations,
+            } : null,
           })
         });
 
@@ -168,13 +194,15 @@ export function useChat() {
     persistMessages(readLocalMessages());
     fetchMessages();
     refreshConnectionStatus();
-  }, [fetchMessages, persistMessages, refreshConnectionStatus]);
+    loadYesterdayHistory();
+  }, [fetchMessages, persistMessages, refreshConnectionStatus, loadYesterdayHistory]);
 
   return {
     messages,
     loading,
     error,
     analysisData,
+    yesterdayHistory,
     sendMessage,
     refetch: fetchMessages,
     clearMessages,

@@ -1,10 +1,12 @@
 
 import { ChatInterface } from '../components/ChatInterface';
+import { DailyHistorySummary } from '../components/DailyHistorySummary';
 import { MessageSquare, Sparkles } from 'lucide-react';
 import { SensorData } from '../hooks/useSensorData';
 import { Settings } from '../hooks/useSettings';
 import { WeatherData } from '../hooks/useWeather';
 import { getPlantPhaseProfile } from '../lib/plantPhase';
+import { useDailyHistory } from '../hooks/useDailyHistory';
 
 interface ChatPageProps {
   sensorData?: SensorData | null;
@@ -14,6 +16,7 @@ interface ChatPageProps {
 
 export function ChatPage({ sensorData = null, settings = null, weatherData = null }: ChatPageProps) {
   const phase = getPlantPhaseProfile(settings?.plant_phase);
+  const { yesterdayHistory, loading: historyLoading } = useDailyHistory();
 
   return (
     <div className="space-y-6">
@@ -35,6 +38,11 @@ export function ChatPage({ sensorData = null, settings = null, weatherData = nul
           <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">Lokasi cuaca</p>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{weatherData?.location || 'Lokasi cuaca belum dipilih'}</p>
         </div>
+      </div>
+
+      {/* Daily History Summary */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+        <DailyHistorySummary history={yesterdayHistory} isLoading={historyLoading} />
       </div>
 
       <ChatInterface sensorData={sensorData} settings={settings} weatherData={weatherData} />

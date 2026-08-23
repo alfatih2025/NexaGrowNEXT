@@ -101,12 +101,12 @@ function buildChatMetadata(latestSensor, latestSettings, role) {
 }
 
 
-function buildSystemPrompt(latestSensor, settings = {}) {
+function buildSystemPrompt(latestSensor, settings = {}, yesterdayHistory = null) {
   const phase = String(settings.plant_phase || settings.crop_mode || 'vegetatif').trim().toLowerCase() === 'generatif'
     ? 'generatif'
     : 'vegetatif';
 
-  return `Kamu adalah Smart Farm Assistant, ahli pertanian cerdas yang membantu petani mengelola lahan.
+  let basePrompt = `Kamu adalah Smart Farm Assistant, ahli pertanian cerdas yang membantu petani mengelola lahan.
 
 FOKUS:
 - Fase tanaman aktif: ${phase.toUpperCase()}
@@ -124,6 +124,19 @@ FOKUS:
 Gunakan rumus pengolahan Arduino berikut tanpa mengganti konstanta kecuali pengguna meminta kalibrasi baru secara eksplisit.
 
 Jika user memberi prompt yang membahas iklim berbeda atau kondisi hipotetis lain, jawab sesuai skenario itu, bukan memaksa data sensor asli. Gunakan bahasa Indonesia yang ramah, singkat, dan akurat.`;
+
+  // Tambahkan konteks kemarin jika tersedia
+  if (yesterdayHistory && yesterdayHistory.insights) {
+    basePrompt += `
+
+RIWAYAT ANALISIS KEMARIN (untuk referensi konteks):
+- Insight Kemarin: ${yesterdayHistory.insights.substring(0, 200)}
+- Saran Kemarin: ${yesterdayHistory.recommendations ? yesterdayHistory.recommendations.substring(0, 150) : 'Tidak ada saran'}
+
+Gunakan informasi ini untuk memberikan analisis yang lebih baik tentang perubahan kondisi atau tren dari hari ke hari.`;
+  }
+
+  return basePrompt;
 }
 
 function getStatusLevel(latestSensor, settings = {}) {
@@ -161,7 +174,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { message, user_id = 'anonymous' } = req.body || {};
+      const { message, user_id = 'anonymous', yesterdayHistory = null } = req.body || {};
 
       const { data: latestSensor } = await supabase
         .from('sensor_data')
@@ -185,7 +198,7 @@ export default async function handler(req, res) {
         metadata: userChatMetadata,
       });
 
-      const systemPrompt = buildSystemPrompt(latestSensor, latestSettings || {});
+      const systemPrompt = buildSystemPrompt(latestSensor, latestSettings || {}, yesterdayHistory);
 
       let aiResponse = '';
 

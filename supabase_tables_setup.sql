@@ -202,6 +202,39 @@ CREATE INDEX IF NOT EXISTS idx_control_logs_command ON control_logs(command);
 CREATE INDEX IF NOT EXISTS idx_control_logs_status ON control_logs(status);
 
 -- =====================================================================
+-- 6A. CHAT_DAILY_HISTORY TABLE - Ringkasan chat harian untuk memori AI
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS chat_daily_history (
+    id BIGSERIAL PRIMARY KEY,
+    
+    -- Date Info
+    history_date DATE NOT NULL UNIQUE, -- Tanggal untuk riwayat (YYYY-MM-DD)
+    
+    -- Daily Summary
+    summary_text TEXT, -- Ringkasan analisis kondisi hari itu
+    key_metrics JSONB, -- Metrik penting hari itu (min/max/avg temp, humidity, soil, dll)
+    message_count INT DEFAULT 0, -- Jumlah pesan di hari itu
+    
+    -- Chat Messages History
+    daily_messages JSONB, -- Array dari message objects {role, content, created_at}
+    
+    -- Sensor Analysis
+    sensor_summary JSONB, -- Ringkasan sensor: status kritis, warning, normal
+    ai_insights TEXT, -- Insight AI tentang kondisi harian
+    
+    -- Next Day Recommendations
+    recommendations TEXT, -- Saran untuk hari berikutnya berdasarkan kondisi
+    
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index untuk query efisien
+CREATE INDEX IF NOT EXISTS idx_chat_daily_history_date ON chat_daily_history(history_date DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_daily_history_created_at ON chat_daily_history(created_at DESC);
+
+-- =====================================================================
 -- 7. DEVICES TABLE (Opsional) - Informasi perangkat IoT
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS devices (
@@ -241,6 +274,7 @@ ALTER TABLE sensor_data DISABLE ROW LEVEL SECURITY;
 ALTER TABLE settings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE alerts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages DISABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_daily_history DISABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE control_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE devices DISABLE ROW LEVEL SECURITY;
