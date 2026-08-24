@@ -136,6 +136,8 @@ export function useChat() {
     // Step 4: Load yesterday history untuk AI context
     loadYesterdayHistory();
   }, []); // Empty dependency array - hanya jalankan sekali saat mount
+
+  const clearMessages = useCallback(async () => {
     persistMessages([]);
     setAnalysisData(null);
     try {
