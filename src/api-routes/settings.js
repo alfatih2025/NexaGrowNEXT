@@ -66,9 +66,10 @@ function normalizePhase(value) {
 
 function normalizeAiModel(provider, model, fallback) {
   const normalized = String(model || fallback).trim() || fallback;
-  return provider === 'gemini' && normalized === 'gemini-2.5-flash'
-    ? CURRENT_GEMINI_MODEL
-    : normalized;
+  if (provider !== 'gemini') return normalized;
+  if (normalized === 'gemini-2.5-flash') return CURRENT_GEMINI_MODEL;
+  if (normalized === 'gemini-2.5-pro') return 'gemini-3.1-pro-preview';
+  return normalized;
 }
 
 function normalizeLocation(value) {

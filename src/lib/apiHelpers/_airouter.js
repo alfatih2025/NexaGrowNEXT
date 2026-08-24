@@ -169,9 +169,10 @@ async function callProvider(provider, model, messages, temperature, maxTokens, o
 }
 
 function normalizeAiModel(provider, model) {
-  return provider === 'gemini' && model === 'gemini-2.5-flash'
-    ? 'gemini-3.6-flash'
-    : model;
+  if (provider !== 'gemini') return model;
+  if (model === 'gemini-2.5-flash') return 'gemini-3.6-flash';
+  if (model === 'gemini-2.5-pro') return 'gemini-3.1-pro-preview';
+  return model;
 }
 
 export async function getAiRouterStatus(origin) {

@@ -13,7 +13,7 @@ const PROVIDERS = [
 ];
 
 const MODELS: Record<string, string[]> = {
-  gemini: ['gemini-3.6-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+  gemini: ['gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
   openrouter: ['qwen/qwen-2.5-72b-instruct', 'google/gemini-2.5-flash', 'deepseek/deepseek-chat', 'meta-llama/llama-3.3-70b-instruct'],
   groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
   none: ['-']
