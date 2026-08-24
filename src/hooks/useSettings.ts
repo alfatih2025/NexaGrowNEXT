@@ -42,6 +42,7 @@ const DEFAULT_PHASE = 'vegetatif' as const;
 const phaseDefaults = getPhaseDefaults(DEFAULT_PHASE);
 const STORAGE_KEY = 'nexagrow-settings-cache-v3';
 const SETTINGS_EVENT = 'nexagrow:settings-updated';
+const CURRENT_GEMINI_MODEL = 'gemini-3.6-flash';
 
 export const DEFAULT_SETTINGS: Settings = {
   id: 1,
@@ -68,7 +69,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // AI Router Defaults
   ai_mode: 'default',
   ai_primary_provider: 'gemini',
-  ai_primary_model: 'gemini-2.5-flash',
+  ai_primary_model: CURRENT_GEMINI_MODEL,
   ai_fallback_1_provider: 'openrouter',
   ai_fallback_1_model: 'qwen/qwen-2.5-72b-instruct',
   ai_fallback_2_provider: 'groq',
@@ -177,11 +178,11 @@ function normalizeSettings(input: Partial<Settings> | null | undefined): Setting
     // AI Router fields
     ai_mode: ['default', 'expert'].includes(value.ai_mode as string) ? (value.ai_mode as 'default' | 'expert') : DEFAULT_SETTINGS.ai_mode,
     ai_primary_provider: ['gemini', 'openrouter', 'groq'].includes(value.ai_primary_provider as string) ? (value.ai_primary_provider as 'gemini' | 'openrouter' | 'groq') : DEFAULT_SETTINGS.ai_primary_provider,
-    ai_primary_model: String(value.ai_primary_model || DEFAULT_SETTINGS.ai_primary_model).trim() || DEFAULT_SETTINGS.ai_primary_model,
+    ai_primary_model: String(value.ai_primary_model || DEFAULT_SETTINGS.ai_primary_model).trim() === 'gemini-2.5-flash' ? CURRENT_GEMINI_MODEL : String(value.ai_primary_model || DEFAULT_SETTINGS.ai_primary_model).trim() || DEFAULT_SETTINGS.ai_primary_model,
     ai_fallback_1_provider: ['gemini', 'openrouter', 'groq', 'none'].includes(value.ai_fallback_1_provider as string) ? (value.ai_fallback_1_provider as 'gemini' | 'openrouter' | 'groq' | 'none') : DEFAULT_SETTINGS.ai_fallback_1_provider,
-    ai_fallback_1_model: String(value.ai_fallback_1_model || DEFAULT_SETTINGS.ai_fallback_1_model).trim() || DEFAULT_SETTINGS.ai_fallback_1_model,
+    ai_fallback_1_model: String(value.ai_fallback_1_model || DEFAULT_SETTINGS.ai_fallback_1_model).trim() === 'gemini-2.5-flash' ? CURRENT_GEMINI_MODEL : String(value.ai_fallback_1_model || DEFAULT_SETTINGS.ai_fallback_1_model).trim() || DEFAULT_SETTINGS.ai_fallback_1_model,
     ai_fallback_2_provider: ['gemini', 'openrouter', 'groq', 'none'].includes(value.ai_fallback_2_provider as string) ? (value.ai_fallback_2_provider as 'gemini' | 'openrouter' | 'groq' | 'none') : DEFAULT_SETTINGS.ai_fallback_2_provider,
-    ai_fallback_2_model: String(value.ai_fallback_2_model || DEFAULT_SETTINGS.ai_fallback_2_model).trim() || DEFAULT_SETTINGS.ai_fallback_2_model,
+    ai_fallback_2_model: String(value.ai_fallback_2_model || DEFAULT_SETTINGS.ai_fallback_2_model).trim() === 'gemini-2.5-flash' ? CURRENT_GEMINI_MODEL : String(value.ai_fallback_2_model || DEFAULT_SETTINGS.ai_fallback_2_model).trim() || DEFAULT_SETTINGS.ai_fallback_2_model,
     ai_strategy: ['priority', 'fastest', 'cheapest', 'best_quality', 'automatic'].includes(value.ai_strategy as string) ? (value.ai_strategy as 'priority' | 'fastest' | 'cheapest' | 'best_quality' | 'automatic') : DEFAULT_SETTINGS.ai_strategy,
     ai_temperature: Math.min(2, Math.max(0, toFiniteNumber(value.ai_temperature, DEFAULT_SETTINGS.ai_temperature))),
     ai_max_tokens: Math.min(8000, Math.max(100, toFiniteNumber(value.ai_max_tokens, DEFAULT_SETTINGS.ai_max_tokens))),

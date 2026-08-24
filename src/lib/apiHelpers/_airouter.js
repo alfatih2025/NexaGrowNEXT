@@ -168,6 +168,12 @@ async function callProvider(provider, model, messages, temperature, maxTokens, o
   return data.choices?.[0]?.message?.content || '';
 }
 
+function normalizeAiModel(provider, model) {
+  return provider === 'gemini' && model === 'gemini-2.5-flash'
+    ? 'gemini-3.6-flash'
+    : model;
+}
+
 export async function getAiRouterStatus(origin) {
   // Simple check if any keys exist
   const geminiKey = getApiKey('gemini');
@@ -183,7 +189,7 @@ export async function getAiRouterStatus(origin) {
 export async function sendAiRouterMessage({ message, history = [], sensorContext = null, aiSettings = null, origin }) {
   const settings = aiSettings || {
     ai_primary_provider: 'gemini',
-    ai_primary_model: 'gemini-2.5-flash',
+    ai_primary_model: 'gemini-3.6-flash',
     ai_fallback_1_provider: 'openrouter',
     ai_fallback_1_model: 'qwen/qwen-2.5-72b-instruct',
     ai_fallback_2_provider: 'groq',
@@ -202,9 +208,9 @@ export async function sendAiRouterMessage({ message, history = [], sensorContext
   ];
 
   const providersToTry = [
-    { p: settings.ai_primary_provider, m: settings.ai_primary_model },
-    { p: settings.ai_fallback_1_provider, m: settings.ai_fallback_1_model },
-    { p: settings.ai_fallback_2_provider, m: settings.ai_fallback_2_model }
+    { p: settings.ai_primary_provider, m: normalizeAiModel(settings.ai_primary_provider, settings.ai_primary_model) },
+    { p: settings.ai_fallback_1_provider, m: normalizeAiModel(settings.ai_fallback_1_provider, settings.ai_fallback_1_model) },
+    { p: settings.ai_fallback_2_provider, m: normalizeAiModel(settings.ai_fallback_2_provider, settings.ai_fallback_2_model) }
   ].filter(x => x.p && x.p !== 'none');
 
   let lastError = null;

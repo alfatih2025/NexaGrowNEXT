@@ -2,6 +2,7 @@ import supabase from '../lib/apiHelpers/_supabase.js';
 import { requireApiAuth } from '../lib/apiHelpers/_auth.js';
 
 const DEFAULT_LOCATION_CODE = '33.74.07.1010';
+const CURRENT_GEMINI_MODEL = 'gemini-3.6-flash';
 
 const DEFAULT_SETTINGS = {
   id: 1,
@@ -25,7 +26,7 @@ const DEFAULT_SETTINGS = {
   user_email: 'petani@sprout.id',
   ai_mode: 'default',
   ai_primary_provider: 'gemini',
-  ai_primary_model: 'gemini-2.5-flash',
+  ai_primary_model: CURRENT_GEMINI_MODEL,
   ai_fallback_1_provider: 'openrouter',
   ai_fallback_1_model: 'qwen/qwen-2.5-72b-instruct',
   ai_fallback_2_provider: 'groq',
@@ -61,6 +62,13 @@ function normalizeRange(low, high, min, max, fallbackLow, fallbackHigh) {
 
 function normalizePhase(value) {
   return String(value || '').trim().toLowerCase() === 'generatif' ? 'generatif' : 'vegetatif';
+}
+
+function normalizeAiModel(provider, model, fallback) {
+  const normalized = String(model || fallback).trim() || fallback;
+  return provider === 'gemini' && normalized === 'gemini-2.5-flash'
+    ? CURRENT_GEMINI_MODEL
+    : normalized;
 }
 
 function normalizeLocation(value) {
@@ -119,11 +127,11 @@ function normalizeSettings(input = {}) {
     soil_moisture_threshold: soilLow,
     ai_mode: ['default', 'expert'].includes(obj.ai_mode) ? obj.ai_mode : DEFAULT_SETTINGS.ai_mode,
     ai_primary_provider: ['gemini', 'openrouter', 'groq'].includes(obj.ai_primary_provider) ? obj.ai_primary_provider : DEFAULT_SETTINGS.ai_primary_provider,
-    ai_primary_model: String(obj.ai_primary_model || DEFAULT_SETTINGS.ai_primary_model).trim() || DEFAULT_SETTINGS.ai_primary_model,
+    ai_primary_model: normalizeAiModel(obj.ai_primary_provider, obj.ai_primary_model, DEFAULT_SETTINGS.ai_primary_model),
     ai_fallback_1_provider: ['gemini', 'openrouter', 'groq', 'none'].includes(obj.ai_fallback_1_provider) ? obj.ai_fallback_1_provider : DEFAULT_SETTINGS.ai_fallback_1_provider,
-    ai_fallback_1_model: String(obj.ai_fallback_1_model || DEFAULT_SETTINGS.ai_fallback_1_model).trim() || DEFAULT_SETTINGS.ai_fallback_1_model,
+    ai_fallback_1_model: normalizeAiModel(obj.ai_fallback_1_provider, obj.ai_fallback_1_model, DEFAULT_SETTINGS.ai_fallback_1_model),
     ai_fallback_2_provider: ['gemini', 'openrouter', 'groq', 'none'].includes(obj.ai_fallback_2_provider) ? obj.ai_fallback_2_provider : DEFAULT_SETTINGS.ai_fallback_2_provider,
-    ai_fallback_2_model: String(obj.ai_fallback_2_model || DEFAULT_SETTINGS.ai_fallback_2_model).trim() || DEFAULT_SETTINGS.ai_fallback_2_model,
+    ai_fallback_2_model: normalizeAiModel(obj.ai_fallback_2_provider, obj.ai_fallback_2_model, DEFAULT_SETTINGS.ai_fallback_2_model),
     ai_strategy: ['priority', 'fastest', 'cheapest', 'best_quality', 'automatic'].includes(obj.ai_strategy) ? obj.ai_strategy : DEFAULT_SETTINGS.ai_strategy,
     ai_temperature: clampNumber(obj.ai_temperature, 0, 2, DEFAULT_SETTINGS.ai_temperature),
     ai_max_tokens: clampNumber(obj.ai_max_tokens, 100, 8000, DEFAULT_SETTINGS.ai_max_tokens),
