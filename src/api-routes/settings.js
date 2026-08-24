@@ -2,7 +2,7 @@ import supabase from '../lib/apiHelpers/_supabase.js';
 import { requireApiAuth } from '../lib/apiHelpers/_auth.js';
 
 const DEFAULT_LOCATION_CODE = '33.74.07.1010';
-const CURRENT_GEMINI_MODEL = 'gemini-3.6-flash';
+const CURRENT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
 
 const DEFAULT_SETTINGS = {
   id: 1,
@@ -67,8 +67,7 @@ function normalizePhase(value) {
 function normalizeAiModel(provider, model, fallback) {
   const normalized = String(model || fallback).trim() || fallback;
   if (provider !== 'gemini') return normalized;
-  if (normalized === 'gemini-2.5-flash') return CURRENT_GEMINI_MODEL;
-  if (normalized === 'gemini-2.5-pro') return 'gemini-3.1-pro-preview';
+  if (['gemini-2.5-flash', 'gemini-2.5-flash-lite-preview', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.6-flash'].includes(normalized)) return CURRENT_GEMINI_MODEL;
   return normalized;
 }
 
