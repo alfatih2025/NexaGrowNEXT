@@ -1,5 +1,5 @@
 import { buildApiHeaders } from '../lib/apiAuth';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { SensorSnapshotContext } from '../services/openrouter';
 import type { DailyHistory } from './useDailyHistory';
 
@@ -49,7 +49,7 @@ async function fetchApiMessages(): Promise<ChatMessage[]> {
 
 function normalizeSensorContext(sensorContext?: Partial<SensorSnapshotContext> | null) {
   if (!sensorContext || typeof sensorContext !== 'object') return null;
-  return sensorContext; // Simplified for brevity in this replace
+  return sensorContext;
 }
 
 export function useChat() {
@@ -63,6 +63,10 @@ export function useChat() {
     label: 'Memeriksa AI Router',
     detail: 'Menghubungkan chatbot ke sistem...',
   });
+
+  // Track initialization untuk prevent multiple fetches
+  const isInitializedRef = useRef(false);
+  const isFetchingRef = useRef(false);
 
   const persistMessages = useCallback((nextMessages: ChatMessage[]) => {
     setMessages(nextMessages);
@@ -108,7 +112,30 @@ export function useChat() {
     }
   }, []);
 
-  const clearMessages = useCallback(async () => {
+  /**
+   * Initialize hook - hanya sekali saat mount
+   * Gunakan useRef untuk track initialization state
+   */
+  useEffect(() => {
+    // Jangan jalankan initialization dua kali
+    if (isInitializedRef.current) return;
+    isInitializedRef.current = true;
+
+    // Step 1: Load dari localStorage terlebih dahulu
+    const localMessages = readLocalMessages();
+    if (localMessages.length > 0) {
+      persistMessages(localMessages);
+    }
+
+    // Step 2: Coba sync dengan API (tapi jangan overwrite local jika API kosong)
+    fetchMessages();
+
+    // Step 3: Check connection status
+    refreshConnectionStatus();
+
+    // Step 4: Load yesterday history untuk AI context
+    loadYesterdayHistory();
+  }, []); // Empty dependency array - hanya jalankan sekali saat mount
     persistMessages([]);
     setAnalysisData(null);
     try {
@@ -122,12 +149,34 @@ export function useChat() {
   }, [persistMessages]);
 
   const fetchMessages = useCallback(async () => {
+    // Prevent multiple simultaneous fetches
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
       const apiMessages = await fetchApiMessages();
-      persistMessages(apiMessages);
+      // Prioritas: API messages jika ada, fallback ke localStorage
+      if (apiMessages && apiMessages.length > 0) {
+        persistMessages(apiMessages);
+      } else {
+        // Jika API kosong, gunakan localStorage
+        const localMessages = readLocalMessages();
+        if (localMessages.length > 0) {
+          persistMessages(localMessages);
+        }
+      }
       setError(null);
-    } catch {
-      persistMessages(readLocalMessages());
+    } catch (err) {
+      // Jika API error, fallback ke localStorage
+      const localMessages = readLocalMessages();
+      persistMessages(localMessages);
+      const errorMsg = err instanceof Error ? err.message : 'Gagal mengambil riwayat chat';
+      // Jangan set error jika localStorage ada
+      if (localMessages.length === 0) {
+        setError(errorMsg);
+      }
+    } finally {
+      isFetchingRef.current = false;
     }
   }, [persistMessages]);
 
@@ -187,15 +236,8 @@ export function useChat() {
         setLoading(false);
       }
     },
-    [messages, persistMessages],
+    [messages, persistMessages, yesterdayHistory],
   );
-
-  useEffect(() => {
-    persistMessages(readLocalMessages());
-    fetchMessages();
-    refreshConnectionStatus();
-    loadYesterdayHistory();
-  }, [fetchMessages, persistMessages, refreshConnectionStatus, loadYesterdayHistory]);
 
   return {
     messages,
