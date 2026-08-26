@@ -67,7 +67,7 @@ function normalizePhase(value) {
 function normalizeAiModel(provider, model, fallback) {
   const normalized = String(model || fallback).trim() || fallback;
   if (provider !== 'gemini') return normalized;
-  if (['gemini-2.5-flash', 'gemini-2.5-flash-lite-preview', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.6-flash'].includes(normalized)) return CURRENT_GEMINI_MODEL;
+  if (['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite-preview', 'gemini-2.5-pro', 'gemini-3.1-pro-preview'].includes(normalized)) return CURRENT_GEMINI_MODEL;
   return normalized;
 }
 
