@@ -1,5 +1,6 @@
 import { Thermometer, Droplets, Activity } from 'lucide-react';
 import type { NodeSensorData } from '../hooks/useMultiNodeSensorData';
+import { timeAgo } from '../lib/timeUtils';
 
 interface NodeCardProps {
   nodeName: string;
@@ -84,8 +85,8 @@ export function NodeCard({ nodeName, nodeId, data }: NodeCardProps) {
       </div>
       
       {/* Last Update */}
-      <div className="mt-4 text-right text-xs text-slate-600 dark:text-slate-500 relative z-10">
-        {data?.created_at ? `Diperbarui: ${new Date(data.created_at).toLocaleTimeString('id-ID')}` : 'Menunggu data...'}
+      <div className="mt-4 text-right text-xs text-slate-600 dark:text-slate-500 relative z-10 font-medium">
+        {data?.created_at ? `Data terakhir: ${timeAgo(data.created_at)}` : 'Menunggu data...'}
       </div>
     </div>
   );
