@@ -42,7 +42,7 @@ const DEFAULT_PHASE = 'vegetatif' as const;
 const phaseDefaults = getPhaseDefaults(DEFAULT_PHASE);
 const STORAGE_KEY = 'nexagrow-settings-cache-v3';
 const SETTINGS_EVENT = 'nexagrow:settings-updated';
-const CURRENT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const CURRENT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
 export const DEFAULT_SETTINGS: Settings = {
   id: 1,

@@ -2,7 +2,7 @@ import supabase from '../lib/apiHelpers/_supabase.js';
 import { requireApiAuth } from '../lib/apiHelpers/_auth.js';
 
 const DEFAULT_LOCATION_CODE = '33.74.07.1010';
-const CURRENT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const CURRENT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
 const DEFAULT_SETTINGS = {
   id: 1,

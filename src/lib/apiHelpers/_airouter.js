@@ -170,7 +170,7 @@ async function callProvider(provider, model, messages, temperature, maxTokens, o
 
 function normalizeAiModel(provider, model) {
   if (provider !== 'gemini') return model;
-  if (['gemini-2.5-flash', 'gemini-2.5-flash-lite-preview', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.6-flash'].includes(model)) return 'gemini-2.5-flash-lite';
+  if (['gemini-2.5-flash', 'gemini-2.5-flash-lite-preview', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.6-flash'].includes(model)) return 'gemini-3.5-flash-lite';
   return model;
 }
 
@@ -189,7 +189,7 @@ export async function getAiRouterStatus(origin) {
 export async function sendAiRouterMessage({ message, history = [], sensorContext = null, aiSettings = null, origin }) {
   const settings = aiSettings || {
     ai_primary_provider: 'gemini',
-    ai_primary_model: 'gemini-2.5-flash-lite',
+    ai_primary_model: 'gemini-3.5-flash-lite',
     ai_fallback_1_provider: 'openrouter',
     ai_fallback_1_model: 'qwen/qwen-2.5-72b-instruct',
     ai_fallback_2_provider: 'groq',
