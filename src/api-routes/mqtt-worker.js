@@ -40,6 +40,7 @@ export function startMqttWorker() {
         temperature: payload.temperature,
         humidity: payload.humidity,
         soil_moisture: payload.soil_moisture ?? payload.soil,
+        ph: payload.ph ?? payload.pH ?? payload.ph_tanah,
       };
       
       if (payload.created_at) {

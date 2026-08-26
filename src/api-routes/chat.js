@@ -55,6 +55,7 @@ function buildChatMetadata(latestSensor, latestSettings, role) {
       temperature: latestSensor?.temperature ?? null,
       humidity: latestSensor?.humidity ?? null,
       soil_moisture: latestSensor?.soil_moisture ?? null,
+      ph: latestSensor?.ph ?? null,
       rain: latestSensor?.rain ?? null,
       score: latestSensor?.score ?? null,
       soil_score: latestSensor?.soil_score ?? null,
@@ -113,6 +114,7 @@ FOKUS:
 - Suhu: ${latestSensor?.temperature ?? 28}°C
 - Kelembapan Udara: ${latestSensor?.humidity ?? 70}%
 - Kelembapan Tanah: ${latestSensor?.soil_moisture ?? 60}%
+- pH Tanah: ${latestSensor?.ph ?? '-'}
 - Ambang Suhu: ${settings.temp_threshold_low ?? 0} - ${settings.temp_threshold_high ?? 0} °C
 - Ambang Kelembapan Udara: ${settings.humidity_threshold_low ?? 0} - ${settings.humidity_threshold_high ?? 0} %
 - Ambang Kelembapan Tanah: ${settings.soil_threshold_low ?? settings.soil_moisture_threshold ?? 40} - ${settings.soil_threshold_high ?? 80} % (kritis ${settings.soil_threshold_critical ?? 30} %)
@@ -140,9 +142,19 @@ Gunakan informasi ini untuk memberikan analisis yang lebih baik tentang perubaha
 }
 
 function getStatusLevel(latestSensor, settings = {}) {
+  const ph = Number(latestSensor?.ph);
+  if (Number.isFinite(ph)) {
+    const phMin = Number(settings.ph_min ?? 5.5);
+    const phMax = Number(settings.ph_max ?? 8.0);
+    if (ph < phMin) return 'perlu perhatian karena pH tanah terlalu asam';
+    if (ph > phMax) return 'perlu perhatian karena pH tanah terlalu basa';
+    return 'aman dengan pH tanah berada dalam rentang yang ditentukan';
+  }
+
   const low = Number(settings.soil_threshold_low ?? settings.soil_moisture_threshold ?? 40);
   const critical = Number(settings.soil_threshold_critical ?? Math.max(20, low - 10));
-  const soilMoisture = Number(latestSensor?.soil_moisture ?? 60);
+  const soilMoisture = Number(latestSensor?.soil_moisture);
+  if (!Number.isFinite(soilMoisture)) return 'belum dapat dinilai karena data sensor tanah belum tersedia';
   if (soilMoisture <= critical) return 'kritis';
   if (soilMoisture < low) return 'waspada';
   return 'aman';
@@ -206,9 +218,12 @@ export default async function handler(req, res) {
 
       if (lowerMessage.includes('siram') || lowerMessage.includes('pompa')) {
         const soilMoisture = latestSensor?.soil_moisture ?? 60;
+        const ph = Number(latestSensor?.ph);
         const low = Number(latestSettings?.soil_threshold_low ?? latestSettings?.soil_moisture_threshold ?? 40);
         const critical = Number(latestSettings?.soil_threshold_critical ?? Math.max(20, low - 10));
-        if (soilMoisture <= critical) {
+        if (Number.isFinite(ph)) {
+          aiResponse = `pH tanah saat ini ${ph.toFixed(1)}. Status: ${getStatusLevel(latestSensor, latestSettings)}.`;
+        } else if (soilMoisture <= critical) {
           aiResponse = `💧 Kondisi kritis. Kelembapan tanah ${soilMoisture}% sudah di bawah batas kritis ${critical}%.`;
         } else if (soilMoisture < low) {
           aiResponse = `⚠️ Kelembapan tanah ${soilMoisture}% mulai turun di bawah batas bawah ${low}%.`;

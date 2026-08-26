@@ -66,6 +66,7 @@ export interface MqttSensorSnapshot {
   temperature: number | null;
   humidity: number | null;
   soil_moisture: number | null;
+  ph: number | null;
   updatedAt: string | null;
   sourceTopic: string | null;
 }
@@ -113,6 +114,7 @@ const emptySensorSnapshot: MqttSensorSnapshot = {
   temperature: null,
   humidity: null,
   soil_moisture: null,
+  ph: null,
   updatedAt: null,
   sourceTopic: null,
 };
@@ -196,7 +198,12 @@ function pushHistory(entry: MqttSensorSnapshot) {
 
 function setSensorSnapshot(next: SensorDelta, sourceTopic: string, force = false) {
   const now = new Date().toISOString();
-  const base = sensorSnapshot ?? emptySensorSnapshot;
+  const previous = sensorSnapshot ?? emptySensorSnapshot;
+  // Data dari tiap node membawa sensor tanah yang berbeda. Jangan biarkan
+  // nilai soil Node 1 ikut terbawa saat paket baru berasal dari Node 2.
+  const base = next.node_id != null && next.node_id !== previous.node_id
+    ? { ...emptySensorSnapshot, node_id: next.node_id }
+    : previous;
   const merged: MqttSensorSnapshot = {
     ...base,
     ...next,
@@ -269,6 +276,7 @@ async function persistSensorDataToApi(payload: string, parsed: SensorDelta) {
     temperature: parsed.temperature ?? undefined,
     humidity: parsed.humidity ?? undefined,
     soil_moisture: parsed.soil_moisture ?? undefined,
+    ph: parsed.ph ?? undefined,
   });
 
   if (lastPersistedSensorJson === normalized && now - lastPersistedSensorAt < SENSOR_PERSIST_INTERVAL_MS) {
@@ -404,6 +412,7 @@ function normalizeJsonSensorPayload(payload: string): SensorDelta | null {
       temperature: parseNumeric(obj.temperature),
       humidity: parseNumeric(obj.humidity),
       soil_moisture: parseNumeric(obj.soil_moisture),
+      ph: parseNumeric(obj.ph ?? obj.pH ?? obj.ph_tanah),
     };
   } catch {
     return null;

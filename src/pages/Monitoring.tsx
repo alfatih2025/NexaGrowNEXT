@@ -43,10 +43,11 @@ export function Monitoring() {
         if (prev.length > 0 && prev[0].created_at === snap.updatedAt) return prev;
         
         const newRow: NodeSensorData = {
-          node_id: snap.node_id,
+          node_id: activeNode,
           temperature: snap.temperature,
           humidity: snap.humidity,
           soil_moisture: snap.soil_moisture,
+          ph: snap.ph,
           created_at: snap.updatedAt || new Date().toISOString()
         };
         
@@ -54,7 +55,9 @@ export function Monitoring() {
       });
     });
     
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [activeNode]);
 
   const latest = history.length > 0 ? history[0] : null;
@@ -97,7 +100,12 @@ export function Monitoring() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <SensorChart data={history} type="temperature" title="Tren Suhu" color="#10b981" />
         <SensorChart data={history} type="humidity" title="Tren Kelembapan" color="#0ea5e9" />
-        <SensorChart data={history} type="soil_moisture" title="Tren Kelembapan Tanah" color="#f59e0b" />
+        <SensorChart
+          data={history}
+          type={activeNode === 2 ? 'ph' : 'soil_moisture'}
+          title={activeNode === 2 ? 'Tren pH Tanah' : 'Tren Kelembapan Tanah'}
+          color="#f59e0b"
+        />
       </div>
 
       {/* Tabel Data History */}
@@ -112,7 +120,9 @@ export function Monitoring() {
                 <th className="px-6 py-3 font-medium">Waktu</th>
                 <th className="px-6 py-3 font-medium">Suhu (°C)</th>
                 <th className="px-6 py-3 font-medium">Kelembapan (%)</th>
-                <th className="px-6 py-3 font-medium">Suhu Tanah (%)</th>
+                <th className="px-6 py-3 font-medium">
+                  {activeNode === 2 ? 'pH Tanah' : 'Kelembapan Tanah (%)'}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white light-card dark:bg-slate-950/50">
@@ -141,7 +151,7 @@ export function Monitoring() {
                       {row.humidity?.toFixed(1) || '-'}
                     </td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                      {row.soil_moisture?.toFixed(1) || '-'}
+                      {(activeNode === 2 ? row.ph : row.soil_moisture)?.toFixed(1) || '-'}
                     </td>
                   </tr>
                 ))

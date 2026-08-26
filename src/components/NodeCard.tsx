@@ -3,6 +3,7 @@ import type { NodeSensorData } from '../hooks/useMultiNodeSensorData';
 
 interface NodeCardProps {
   nodeName: string;
+  nodeId: 1 | 2;
   data: NodeSensorData | null;
 }
 
@@ -11,7 +12,11 @@ function formatOneDecimal(value: number | null | undefined) {
   return Number(value).toFixed(1);
 }
 
-export function NodeCard({ nodeName, data }: NodeCardProps) {
+export function NodeCard({ nodeName, nodeId, data }: NodeCardProps) {
+  const isPhNode = nodeId === 2;
+  const soilValue = data?.soil_moisture;
+  const phValue = data?.ph;
+
   return (
     <div className="glass-card p-6 flex flex-col relative overflow-hidden group">
       {/* Background Glow */}
@@ -49,26 +54,33 @@ export function NodeCard({ nodeName, data }: NodeCardProps) {
         </div>
       </div>
 
-      {/* Soil Moisture with Progress Bar */}
+      {/* Node 1 memakai kelembapan tanah, sedangkan Node 2 memakai pH tanah. */}
       <div className="bg-slate-100 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/50 relative z-10">
         <div className="flex justify-between items-end mb-3">
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-green-600 dark:text-green-400" />
-            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Kelembapan Tanah</span>
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              {isPhNode ? 'pH Tanah' : 'Kelembapan Tanah'}
+            </span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">{formatOneDecimal(data?.soil_moisture)}</span>
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">%</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">
+              {formatOneDecimal(isPhNode ? phValue : soilValue)}
+            </span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isPhNode ? 'pH' : '%'}</span>
           </div>
         </div>
-        
-        {/* Progress Bar Container */}
-        <div className="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-green-500 to-blue-400 transition-all duration-1000 ease-out"
-            style={{ width: `${Math.min(Math.max(data?.soil_moisture || 0, 0), 100)}%` }}
-          />
-        </div>
+
+        {isPhNode ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400">Rentang pembacaan pH: 0.0–14.0</p>
+        ) : (
+          <div className="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-green-500 to-blue-400 transition-all duration-1000 ease-out"
+              style={{ width: `${Math.min(Math.max(soilValue || 0, 0), 100)}%` }}
+            />
+          </div>
+        )}
       </div>
       
       {/* Last Update */}

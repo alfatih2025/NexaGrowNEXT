@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS sensor_data (
     temperature NUMERIC(6, 2),
     humidity NUMERIC(6, 2),
     soil_moisture NUMERIC(6, 2),
+    ph NUMERIC(4, 2),
     soil_raw_dry NUMERIC(8, 2),
     rain NUMERIC(8, 3),
     

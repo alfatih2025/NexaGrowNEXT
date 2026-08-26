@@ -8,6 +8,7 @@ export interface SensorData {
   temperature: number | null;
   humidity: number | null;
   soil_moisture: number | null;
+  ph: number | null;
   created_at: string;
 }
 
@@ -34,6 +35,7 @@ function buildFallbackData(): SensorData {
     temperature: null,
     humidity: null,
     soil_moisture: null,
+    ph: null,
     created_at: new Date().toISOString(),
   };
 }
@@ -51,6 +53,7 @@ function normalizeSensorDataRow(row: any): SensorData | null {
     temperature: toNumber(row.temperature, fallback.temperature),
     humidity: toNumber(row.humidity, fallback.humidity),
     soil_moisture: toNumber(row.soil_moisture ?? row.soil ?? row.tanah, fallback.soil_moisture),
+    ph: toNumber(row.ph ?? row.pH ?? row.ph_tanah, fallback.ph),
     created_at: row.created_at ?? new Date().toISOString(),
   };
 }
@@ -66,6 +69,7 @@ function mergeSensorData(base: SensorData | null, live: MqttSensorSnapshot | nul
     temperature: live?.temperature ?? fallback.temperature,
     humidity: live?.humidity ?? fallback.humidity,
     soil_moisture: live?.soil_moisture ?? fallback.soil_moisture,
+    ph: live?.ph ?? fallback.ph,
     created_at: live?.updatedAt ?? fallback.created_at,
   };
 }

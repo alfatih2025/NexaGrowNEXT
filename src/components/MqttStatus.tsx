@@ -40,6 +40,7 @@ export function MqttStatus() {
   const status = useMqttStatus();
   const sensor = status.sensorSnapshot;
   const statusTone = status.espOnline ? 'good' : 'danger';
+  const isPhNode = sensor?.node_id === 2;
 
   return (
     <motion.section
@@ -75,7 +76,12 @@ export function MqttStatus() {
           tone="good"
         />
         <StatTile label="Suhu" value={`${formatOneDecimal(sensor?.temperature)}${sensor?.temperature != null ? '°C' : ''}`} icon={Thermometer} tone="warning" />
-        <StatTile label="Soil" value={`${formatOneDecimal(sensor?.soil_moisture)}${sensor?.soil_moisture != null ? '%' : ''}`} icon={Droplets} tone="warning" />
+        <StatTile
+          label={isPhNode ? 'pH Tanah' : 'Kelembapan Tanah'}
+          value={`${formatOneDecimal(isPhNode ? sensor?.ph : sensor?.soil_moisture)}${isPhNode ? sensor?.ph != null ? ' pH' : '' : sensor?.soil_moisture != null ? '%' : ''}`}
+          icon={Droplets}
+          tone="warning"
+        />
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">

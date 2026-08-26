@@ -175,6 +175,7 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
       temperature: sensorData?.temperature ?? null,
       humidity: sensorData?.humidity ?? null,
       soil_moisture: sensorData?.soil_moisture ?? null,
+      ph: sensorData?.ph ?? null,
       created_at: sensorData?.created_at ?? null,
       plant_phase: settings?.plant_phase ?? null,
       soil_threshold_low: settings?.soil_threshold_low ?? null,
