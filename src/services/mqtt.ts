@@ -244,6 +244,10 @@ function setSensorSnapshot(next: SensorDelta, sourceTopic: string, force = false
     lastMessageAt: now,
     sensorSnapshot,
   };
+  
+  // Save to database automatically when web is open
+  persistSensorDataToApi(JSON.stringify(merged), next);
+  
   emit();
 }
 
@@ -291,6 +295,7 @@ async function persistSensorDataToApi(payload: string, parsed: SensorDelta) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': (import.meta.env.VITE_API_AUTH_TOKEN as string) || 'NXG_2026_x7f83K2Lm91',
       },
       body: normalized,
     });
