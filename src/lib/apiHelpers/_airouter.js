@@ -102,7 +102,7 @@ function buildSystemPrompt(sensor) {
   ].join('\n');
 }
 
-async function callProvider(provider, model, messages, temperature, maxTokens, origin) {
+async function callProvider(provider, model, messages, temperature, maxTokens, origin, images = []) {
   const apiKey = getApiKey(provider);
   if (!apiKey) throw new Error(`API Key untuk ${provider} tidak ditemukan di environment.`);
 
@@ -113,18 +113,32 @@ async function callProvider(provider, model, messages, temperature, maxTokens, o
   };
 
   if (provider === 'gemini') {
-    // Gemini uses Google AI Studio endpoint (OpenAI compatible or native)
-    // We will use the OpenAI compatible endpoint for simplicity if possible, or standard gemini endpoint.
-    // For universal compatibility, we assume standard OpenAI format is supported by Google via specific endpoint, 
-    // or we just use OpenRouter logic. Wait, let's use the Gemini API endpoint.
-    // Or we can just mock the Gemini endpoint if we are using OpenAI SDK.
-    // Let's implement basic fetch for Gemini:
     endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const geminiMessages = messages.map(m => ({
-      role: m.role === 'system' ? 'user' : (m.role === 'assistant' ? 'model' : 'user'),
-      parts: [{ text: m.content }]
-    }));
-    // Merge consecutive same roles if needed, but this is a simplified version.
+    
+    const geminiMessages = messages.map((m, idx) => {
+      const isLastUserMsg = m.role === 'user' && idx === messages.length - 1;
+      const parts = [{ text: m.content || '' }];
+
+      if (isLastUserMsg && Array.isArray(images) && images.length > 0) {
+        images.forEach((imgDataUrl) => {
+          if (typeof imgDataUrl === 'string' && imgDataUrl.includes(';base64,')) {
+            const [header, base64Data] = imgDataUrl.split(';base64,');
+            const mimeType = header.replace('data:', '') || 'image/jpeg';
+            parts.push({
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data,
+              },
+            });
+          }
+        });
+      }
+
+      return {
+        role: m.role === 'system' ? 'user' : m.role === 'assistant' ? 'model' : 'user',
+        parts,
+      };
+    });
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -152,12 +166,29 @@ async function callProvider(provider, model, messages, temperature, maxTokens, o
 
   if (!endpoint) throw new Error(`Provider ${provider} tidak didukung`);
 
+  const formattedMessages = messages.map((m, idx) => {
+    const isLastUserMsg = m.role === 'user' && idx === messages.length - 1;
+    if (isLastUserMsg && Array.isArray(images) && images.length > 0) {
+      const contentParts = [{ type: 'text', text: m.content || '' }];
+      images.forEach((imgDataUrl) => {
+        if (typeof imgDataUrl === 'string') {
+          contentParts.push({
+            type: 'image_url',
+            image_url: { url: imgDataUrl },
+          });
+        }
+      });
+      return { role: m.role, content: contentParts };
+    }
+    return m;
+  });
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers,
     body: JSON.stringify({
       model,
-      messages,
+      messages: formattedMessages,
       temperature,
       max_tokens: maxTokens,
     })
@@ -186,7 +217,7 @@ export async function getAiRouterStatus(origin) {
   return { ok: true, state: 'connected', label: 'AI Router Online', detail: 'Sistem siap.' };
 }
 
-export async function sendAiRouterMessage({ message, history = [], sensorContext = null, aiSettings = null, origin }) {
+export async function sendAiRouterMessage({ message, images = [], history = [], sensorContext = null, aiSettings = null, origin }) {
   const settings = aiSettings || {
     ai_primary_provider: 'gemini',
     ai_primary_model: 'gemini-3.5-flash-lite',
@@ -198,8 +229,13 @@ export async function sendAiRouterMessage({ message, history = [], sensorContext
     ai_max_tokens: 600,
   };
 
+  const hasImages = Array.isArray(images) && images.length > 0;
+  const imagePromptNote = hasImages
+    ? '\n\nPENGGUNA TELAH MENGUNGGAH GAMBAR/FOTO TANAMAN. Lakukan analisis visual mendalam terhadap gambar tersebut (periksa kondisi daun, bercak, hama, defisiensi nutrisi, atau gejala penyakit tanaman).'
+    : '';
+
   const messages = [
-    { role: 'system', content: buildSystemPrompt(sensorContext) },
+    { role: 'system', content: buildSystemPrompt(sensorContext) + imagePromptNote },
     ...history.slice(-8).map((item) => ({
       role: item.role === 'assistant' ? 'assistant' : 'user',
       content: item.content,
@@ -227,7 +263,7 @@ export async function sendAiRouterMessage({ message, history = [], sensorContext
   for (const target of providersToTry) {
     try {
       timeline.push({ time: new Date().toLocaleTimeString(), label: `AI Router selected ${target.p}`, status: 'done' });
-      successContent = await callProvider(target.p, target.m, messages, settings.ai_temperature, settings.ai_max_tokens, origin);
+      successContent = await callProvider(target.p, target.m, messages, settings.ai_temperature, settings.ai_max_tokens, origin, images);
       successfulProvider = target.p;
       successfulModel = target.m;
       fallbackStatus[target.p] = 'Success';

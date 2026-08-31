@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, Sparkles, Sprout, RefreshCw, Wifi, WifiOff, AlertTriangle, Leaf } from 'lucide-react';
+import { Send, Bot, Sparkles, Sprout, RefreshCw, Wifi, WifiOff, AlertTriangle, Leaf, Mic, MicOff, Image as ImageIcon, X, Volume2, VolumeX } from 'lucide-react';
 import { useChat } from '../hooks/useChat';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import type { SensorData } from '../hooks/useSensorData';
 import type { Settings } from '../hooks/useSettings';
 import type { WeatherData } from '../hooks/useWeather';
@@ -147,11 +148,55 @@ import { AiAnalysisView } from './AiAnalysisView';
 export function ChatInterface({ sensorData = null, settings = null, weatherData = null, variant = 'full' }: ChatInterfaceProps) {
   const { messages, loading, error, analysisData, sendMessage, clearMessages, connectionStatus, refreshConnectionStatus } = useChat();
   const [input, setInput] = useState('');
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [activeSpeechId, setActiveSpeechId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { isListening, isSupported: isVoiceSupported, toggleListening, speakText, stopSpeaking } = useVoiceRecognition({
+    lang: 'id-ID',
+    onResult: (text) => setInput(text),
+    onError: (err) => alert(err),
+  });
 
   const isCompact = variant === 'compact';
   const phaseProfile = getPlantPhaseProfile(settings?.plant_phase);
   const weatherLocationLabel = useMemo(() => resolveWeatherLocationPath(settings?.location), [settings?.location]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setAttachedImages((prev) => [...prev, result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachedImage = (index: number) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSpeechToggle = (msgId: number, text: string) => {
+    if (activeSpeechId === msgId) {
+      stopSpeaking();
+      setActiveSpeechId(null);
+    } else {
+      stopSpeaking();
+      setActiveSpeechId(msgId);
+      // Clean up markdown markers before speaking
+      const cleanText = text.replace(/[*#_`]/g, '').replace(/```[\s\S]*?```/g, '');
+      speakText(cleanText);
+    }
+  };
 
   const weatherForecastSummary = useMemo(() => {
     if (!weatherData?.forecast?.length) return null;
@@ -232,11 +277,13 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && attachedImages.length === 0) || loading) return;
 
     const message = input;
+    const images = [...attachedImages];
     setInput('');
-    await sendMessage(message, sensorContext, settings);
+    setAttachedImages([]);
+    await sendMessage(message, sensorContext, settings, images);
   };
 
   const handleQuickPrompt = (text: string) => {
@@ -366,14 +413,38 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                  message.role === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800'
+                className={`group relative max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                  message.role === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-gray-100'
                 }`}
               >
                 {message.role === 'user' ? (
-                  <p className="whitespace-pre-wrap leading-6">{message.content}</p>
+                  <div>
+                    {message.images && message.images.length > 0 && (
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        {message.images.map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={img}
+                            alt={`Tanaman terlampir ${idx + 1}`}
+                            className="h-28 w-28 rounded-xl object-cover border border-white/20 shadow-sm"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <p className="whitespace-pre-wrap leading-6">{message.content}</p>
+                  </div>
                 ) : (
-                  renderAssistantMessage(message.content)
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => handleSpeechToggle(message.id, message.content)}
+                      className="absolute -right-2 -top-2 rounded-full bg-white p-1 text-slate-500 shadow transition hover:bg-slate-50 hover:text-green-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                      title={activeSpeechId === message.id ? 'Hentikan Suara' : 'Dengarkan Suara (TTS)'}
+                    >
+                      {activeSpeechId === message.id ? <VolumeX size={14} className="text-red-500 animate-pulse" /> : <Volume2 size={14} />}
+                    </button>
+                    {renderAssistantMessage(message.content)}
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -382,7 +453,9 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
 
         {loading && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-600 shadow-sm dark:bg-[#111827] dark:text-gray-300">Sedang berpikir...</div>
+            <div className="max-w-[80%] rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-600 shadow-sm dark:bg-[#111827] dark:text-gray-300">
+              Sedang berpikir & menganalisis...
+            </div>
           </div>
         )}
 
@@ -398,22 +471,89 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
       </div>
 
       <form onSubmit={handleSubmit} className={footerClassName}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
+        {attachedImages.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2 rounded-xl border border-green-200 bg-green-50/50 p-2 dark:border-green-500/20 dark:bg-slate-800/50">
+            {attachedImages.map((img, idx) => (
+              <div key={idx} className="relative group">
+                <img
+                  src={img}
+                  alt={`Preview ${idx + 1}`}
+                  className="h-16 w-16 rounded-lg object-cover border border-green-300 dark:border-green-600 shadow-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeAttachedImage(idx)}
+                  className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 p-0.5 text-white shadow hover:bg-red-600"
+                  title="Hapus gambar"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+            <span className="self-center text-xs text-green-700 dark:text-green-300 font-medium">
+              {attachedImages.length} foto siap dianalisis AI
+            </span>
+          </div>
+        )}
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          multiple
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Tanyakan kondisi tanaman, cuaca, atau jadwal penyiraman..."
+            placeholder={isListening ? 'Mendengarkan suara Anda...' : 'Tanyakan kondisi tanaman, unggah foto daun/tanaman, atau penyiraman...'}
             rows={isCompact ? 1 : 2}
-            className={`flex-1 resize-none rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 ${isCompact ? 'min-h-[44px]' : 'min-h-[56px]'}`}
+            className={`flex-1 resize-none rounded-xl border border-gray-200 bg-slate-100 px-4 py-3 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 ${
+              isListening ? 'border-red-400 bg-red-50/30 dark:bg-red-900/10 animate-pulse' : ''
+            } ${isCompact ? 'min-h-[44px]' : 'min-h-[56px]'}`}
           />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className={`inline-flex items-center gap-2 rounded-xl bg-green-600 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 ${isCompact ? 'h-[44px] px-4 text-sm' : 'h-[56px] px-5'}`}
-          >
-            <Send size={16} />
-            Kirim
-          </button>
+
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-600 transition hover:bg-slate-100 hover:text-green-600 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              title="Unggah Foto Tanaman (Image Analytics)"
+            >
+              <ImageIcon size={18} />
+            </button>
+
+            {isVoiceSupported && (
+              <button
+                type="button"
+                onClick={toggleListening}
+                disabled={loading}
+                className={`rounded-xl border p-3 transition disabled:opacity-50 ${
+                  isListening
+                    ? 'border-red-400 bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-green-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+                title={isListening ? 'Matikan Mikrofon' : 'Mulai Rekam Suara (Voice Recognition)'}
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || (!input.trim() && attachedImages.length === 0)}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 ${
+                isCompact ? 'h-[44px] px-4 text-sm' : 'h-[48px] px-5'
+              }`}
+            >
+              <Send size={16} />
+              Kirim
+            </button>
+          </div>
         </div>
       </form>
     </div>

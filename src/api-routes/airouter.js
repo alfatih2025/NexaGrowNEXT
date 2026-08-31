@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, history = [], sensorContext = null, aiSettings = null } = req.body || {};
+    const { message, images = [], history = [], sensorContext = null, aiSettings = null } = req.body || {};
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Message is required' });
     }
@@ -40,6 +40,7 @@ export default async function handler(req, res) {
 
     const result = await sendAiRouterMessage({
       message,
+      images,
       history,
       sensorContext,
       aiSettings,

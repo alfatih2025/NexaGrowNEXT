@@ -8,6 +8,7 @@ export interface ChatMessage {
   user_id: string;
   role: 'user' | 'assistant';
   content: string;
+  images?: string[];
   created_at: string;
 }
 
@@ -25,12 +26,13 @@ function readLocalMessages(): ChatMessage[] {
   }
 }
 
-function createMessage(role: 'user' | 'assistant', content: string): ChatMessage {
+function createMessage(role: 'user' | 'assistant', content: string, images?: string[]): ChatMessage {
   return {
     id: Date.now() + Math.floor(Math.random() * 1000),
     user_id: role === 'user' ? 'user_001' : 'assistant_001',
     role,
     content,
+    images: images && images.length > 0 ? images : undefined,
     created_at: new Date().toISOString(),
   };
 }
@@ -183,14 +185,15 @@ export function useChat() {
   }, [persistMessages]);
 
   const sendMessage = useCallback(
-    async (message: string, sensorContext?: Partial<SensorSnapshotContext> | null, settings?: any) => {
+    async (message: string, sensorContext?: Partial<SensorSnapshotContext> | null, settings?: any, images?: string[]) => {
       const trimmedMessage = message.trim();
-      if (!trimmedMessage) return;
+      if (!trimmedMessage && (!images || images.length === 0)) return;
 
       setLoading(true);
       setError(null);
 
-      const userMessage = createMessage('user', trimmedMessage);
+      const displayMessage = trimmedMessage || (images && images.length > 0 ? '[Mengunggah foto tanaman untuk analisis visual...]' : '');
+      const userMessage = createMessage('user', displayMessage, images);
       const optimisticMessages = [...messages, userMessage];
       persistMessages(optimisticMessages);
 
@@ -199,7 +202,8 @@ export function useChat() {
           method: 'POST',
           headers: buildApiHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
-            message: trimmedMessage,
+            message: displayMessage,
+            images: images || [],
             history: optimisticMessages.map(m => ({ role: m.role, content: m.content })),
             sensorContext: normalizeSensorContext(sensorContext),
             aiSettings: settings,
