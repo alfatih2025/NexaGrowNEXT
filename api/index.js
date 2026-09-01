@@ -13,6 +13,7 @@ import airouterHandler from '../src/api-routes/airouter.js';
 import settingsHandler from '../src/api-routes/settings.js';
 import weatherHandler from '../src/api-routes/weather.js';
 import weatherLocationsHandler from '../src/api-routes/weather-locations.js';
+import chatDailyHistoryHandler from '../src/api-routes/chat-daily-history.js';
 
 const routes = {
   'sensor': sensorHandler,
@@ -28,6 +29,7 @@ const routes = {
   'settings': settingsHandler,
   'weather': weatherHandler,
   'weather-locations': weatherLocationsHandler,
+  'chat-daily-history': chatDailyHistoryHandler,
 };
 
 export default async function handler(req, res) {

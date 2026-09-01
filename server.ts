@@ -14,6 +14,7 @@ import airouterApi from './src/api-routes/airouter.js';
 import settingsApi from './src/api-routes/settings.js';
 import weatherLocationsApi from './src/api-routes/weather-locations.js';
 import weatherApi from './src/api-routes/weather.js';
+import chatDailyHistoryApi from './src/api-routes/chat-daily-history.js';
 import { startMqttWorker } from './src/api-routes/mqtt-worker.js';
 
 async function startServer() {
@@ -78,6 +79,7 @@ async function startServer() {
   app.all('/api/settings', apiHandler(settingsApi));
   app.all('/api/weather-locations', apiHandler(weatherLocationsApi));
   app.all('/api/weather', apiHandler(weatherApi));
+  app.all('/api/chat-daily-history', apiHandler(chatDailyHistoryApi));
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
