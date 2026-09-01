@@ -185,10 +185,14 @@ export default async function handler(req, res) {
     }
 
     if (!bmkgData) {
-      return res.status(502).json({
-        error: 'BMKG API unavailable',
+      // Graceful fallback: return default weather data instead of 502
+      const fallbackLabel = resolveLocationLabel(normalizedCode);
+      return res.status(200).json({
+        ...DEFAULT_WEATHER,
         location_code: normalizedCode,
-        location: resolveLocationLabel(normalizedCode)
+        location: fallbackLabel,
+        _fallback: true,
+        _reason: lastError || 'BMKG API unavailable',
       });
     }
 
