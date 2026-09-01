@@ -271,8 +271,47 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
 
   const StatusIcon = statusTone.icon;
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]);
+
+  const groupedMessages = useMemo(() => {
+    const groups: { dateLabel: string; messages: typeof messages }[] = [];
+    
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const formatKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    const todayKey = formatKey(today);
+    const yesterdayKey = formatKey(yesterday);
+    
+    messages.forEach((msg) => {
+      const d = new Date(msg.created_at || Date.now());
+      const key = formatKey(d);
+      let label = '';
+      
+      if (key === todayKey) {
+        label = 'Hari Ini';
+      } else if (key === yesterdayKey) {
+        label = 'Kemarin';
+      } else {
+        label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      }
+      
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.dateLabel === label) {
+        lastGroup.messages.push(msg);
+      } else {
+        groups.push({ dateLabel: label, messages: [msg] });
+      }
+    });
+    
+    return groups;
   }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -404,50 +443,59 @@ export function ChatInterface({ sensorData = null, settings = null, weatherData 
         )}
 
         <AnimatePresence initial={false}>
-          {messages.map((message) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`group relative max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                  message.role === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-gray-100'
-                }`}
-              >
-                {message.role === 'user' ? (
-                  <div>
-                    {message.images && message.images.length > 0 && (
-                      <div className="mb-2 flex flex-wrap gap-2">
-                        {message.images.map((img, idx) => (
-                          <img
-                            key={idx}
-                            src={img}
-                            alt={`Tanaman terlampir ${idx + 1}`}
-                            className="h-28 w-28 rounded-xl object-cover border border-white/20 shadow-sm"
-                          />
-                        ))}
+          {groupedMessages.map(({ dateLabel, messages: dayMessages }) => (
+            <div key={dateLabel} className="space-y-4">
+              <div className="flex justify-center my-6">
+                <span className="bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                  {dateLabel}
+                </span>
+              </div>
+              {dayMessages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`group relative max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                      message.role === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-gray-100'
+                    }`}
+                  >
+                    {message.role === 'user' ? (
+                      <div>
+                        {message.images && message.images.length > 0 && (
+                          <div className="mb-2 flex flex-wrap gap-2">
+                            {message.images.map((img, idx) => (
+                              <img
+                                key={idx}
+                                src={img}
+                                alt={`Tanaman terlampir ${idx + 1}`}
+                                className="h-28 w-28 rounded-xl object-cover border border-white/20 shadow-sm"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <p className="whitespace-pre-wrap leading-6">{message.content}</p>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => handleSpeechToggle(message.id, message.content)}
+                          className="absolute -right-2 -top-2 rounded-full bg-white p-1 text-slate-500 shadow transition hover:bg-slate-50 hover:text-green-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                          title={activeSpeechId === message.id ? 'Hentikan Suara' : 'Dengarkan Suara (TTS)'}
+                        >
+                          {activeSpeechId === message.id ? <VolumeX size={14} className="text-red-500 animate-pulse" /> : <Volume2 size={14} />}
+                        </button>
+                        {renderAssistantMessage(message.content)}
                       </div>
                     )}
-                    <p className="whitespace-pre-wrap leading-6">{message.content}</p>
                   </div>
-                ) : (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => handleSpeechToggle(message.id, message.content)}
-                      className="absolute -right-2 -top-2 rounded-full bg-white p-1 text-slate-500 shadow transition hover:bg-slate-50 hover:text-green-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
-                      title={activeSpeechId === message.id ? 'Hentikan Suara' : 'Dengarkan Suara (TTS)'}
-                    >
-                      {activeSpeechId === message.id ? <VolumeX size={14} className="text-red-500 animate-pulse" /> : <Volume2 size={14} />}
-                    </button>
-                    {renderAssistantMessage(message.content)}
-                  </div>
-                )}
-              </div>
-            </motion.div>
+                </motion.div>
+              ))}
+            </div>
           ))}
         </AnimatePresence>
 
