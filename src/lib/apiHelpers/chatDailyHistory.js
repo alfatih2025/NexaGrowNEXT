@@ -1,11 +1,20 @@
 import supabase from './_supabase.js';
 
 /**
+ * Get current date in WIB (UTC+7) timezone
+ */
+function getWIBDate(baseDate = new Date()) {
+  // Shift to WIB: UTC + 7 hours
+  const wib = new Date(baseDate.getTime() + 7 * 60 * 60 * 1000);
+  return wib;
+}
+
+/**
  * Ambil riwayat harian untuk tanggal tertentu
  */
 export async function getDailyHistory(date = null) {
   try {
-    const targetDate = date ? new Date(date) : new Date();
+    const targetDate = date ? new Date(date) : getWIBDate();
     const dateStr = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
     const { data, error } = await supabase
@@ -27,7 +36,7 @@ export async function getDailyHistory(date = null) {
  */
 export async function getYesterdayHistory() {
   try {
-    const yesterday = new Date();
+    const yesterday = getWIBDate();
     yesterday.setDate(yesterday.getDate() - 1);
     return getDailyHistory(yesterday);
   } catch (error) {
@@ -157,7 +166,7 @@ function generateSummaryText(metrics, sensorMetrics, messages) {
  */
 export async function saveDailyHistory(date = null, overrideData = null) {
   try {
-    const targetDate = date ? new Date(date) : new Date();
+    const targetDate = date ? new Date(date) : getWIBDate();
     const dateStr = targetDate.toISOString().split('T')[0];
 
     // Ambil messages untuk hari itu

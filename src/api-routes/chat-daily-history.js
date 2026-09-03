@@ -35,9 +35,10 @@ export default async function handler(req, res) {
       }
 
       if (!history) {
-        return res.status(404).json({
-          error: 'History tidak ditemukan',
+        return res.status(200).json({
+          success: true,
           data: null,
+          message: 'Belum ada history untuk tanggal ini',
         });
       }
 
