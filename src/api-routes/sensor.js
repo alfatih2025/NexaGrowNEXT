@@ -16,7 +16,6 @@ function normalizeRow(row) {
     temperature: toNumber(row.temperature, null),
     humidity: toNumber(row.humidity, null),
     soil_moisture: toNumber(row.soil_moisture ?? row.soil, null),
-    ph: toNumber(row.ph ?? row.pH ?? row.ph_tanah, null),
     created_at: row.created_at ?? new Date().toISOString(),
   };
 }
@@ -184,7 +183,6 @@ export default async function handler(req, res) {
         temperature: toNumber(body.temperature, null),
         humidity: toNumber(body.humidity, null),
         soil_moisture: toNumber(body.soil_moisture, null),
-        ph: toNumber(body.ph ?? body.pH ?? body.ph_tanah, null),
       };
 
       const { data, error } = await supabase

@@ -66,7 +66,6 @@ export interface MqttSensorSnapshot {
   temperature: number | null;
   humidity: number | null;
   soil_moisture: number | null;
-  ph: number | null;
   updatedAt: string | null;
   sourceTopic: string | null;
 }
@@ -114,7 +113,6 @@ const emptySensorSnapshot: MqttSensorSnapshot = {
   temperature: null,
   humidity: null,
   soil_moisture: null,
-  ph: null,
   updatedAt: null,
   sourceTopic: null,
 };
@@ -280,7 +278,6 @@ async function persistSensorDataToApi(payload: string, parsed: SensorDelta) {
     temperature: parsed.temperature ?? undefined,
     humidity: parsed.humidity ?? undefined,
     soil_moisture: parsed.soil_moisture ?? undefined,
-    ph: parsed.ph ?? undefined,
   });
 
   if (lastPersistedSensorJson === normalized && now - lastPersistedSensorAt < SENSOR_PERSIST_INTERVAL_MS) {
@@ -417,7 +414,6 @@ function normalizeJsonSensorPayload(payload: string): SensorDelta | null {
       temperature: parseNumeric(obj.temperature),
       humidity: parseNumeric(obj.humidity),
       soil_moisture: parseNumeric(obj.soil_moisture),
-      ph: parseNumeric(obj.ph ?? obj.pH ?? obj.ph_tanah),
     };
   } catch {
     return null;

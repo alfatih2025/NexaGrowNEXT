@@ -14,8 +14,6 @@ export interface Settings {
   soil_threshold_critical: number;
   humidity_threshold_low: number;
   humidity_threshold_high: number;
-  ph_min: number;
-  ph_max: number;
   auto_report: boolean;
   report_time: string;
   watering_time: string;
@@ -55,8 +53,6 @@ export const DEFAULT_SETTINGS: Settings = {
   soil_threshold_critical: phaseDefaults.soil_threshold_critical,
   humidity_threshold_low: phaseDefaults.humidityRange[0],
   humidity_threshold_high: phaseDefaults.humidityRange[1],
-  ph_min: 5.5,
-  ph_max: 8.0,
   auto_report: true,
   report_time: '08:00',
   watering_time: '06:00',
@@ -165,8 +161,6 @@ function normalizeSettings(input: Partial<Settings> | null | undefined): Setting
     soil_threshold_critical: critical,
     humidity_threshold_low: humidityLow,
     humidity_threshold_high: humidityHigh,
-    ph_min: toFiniteNumber(value.ph_min, DEFAULT_SETTINGS.ph_min),
-    ph_max: toFiniteNumber(value.ph_max, DEFAULT_SETTINGS.ph_max),
     auto_report: toBoolean(value.auto_report, DEFAULT_SETTINGS.auto_report),
     report_time: typeof value.report_time === 'string' && /^\d{2}:\d{2}$/.test(value.report_time) ? value.report_time : DEFAULT_SETTINGS.report_time,
     watering_time: typeof value.watering_time === 'string' && /^\d{2}:\d{2}$/.test(value.watering_time) ? value.watering_time : DEFAULT_SETTINGS.watering_time,

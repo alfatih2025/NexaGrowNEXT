@@ -47,7 +47,6 @@ export function Monitoring() {
           temperature: snap.temperature,
           humidity: snap.humidity,
           soil_moisture: snap.soil_moisture,
-          ph: snap.ph,
           created_at: snap.updatedAt || new Date().toISOString()
         };
         
@@ -102,8 +101,8 @@ export function Monitoring() {
         <SensorChart data={history} type="humidity" title="Tren Kelembapan" color="#0ea5e9" />
         <SensorChart
           data={history}
-          type={activeNode === 2 ? 'ph' : 'soil_moisture'}
-          title={activeNode === 2 ? 'Tren pH Tanah' : 'Tren Kelembapan Tanah'}
+          type="soil_moisture"
+          title="Tren Kelembapan Tanah"
           color="#f59e0b"
         />
       </div>
@@ -121,7 +120,7 @@ export function Monitoring() {
                 <th className="px-6 py-3 font-medium">Suhu (°C)</th>
                 <th className="px-6 py-3 font-medium">Kelembapan (%)</th>
                 <th className="px-6 py-3 font-medium">
-                  {activeNode === 2 ? 'pH Tanah' : 'Kelembapan Tanah (%)'}
+                  Kelembapan Tanah (%)
                 </th>
               </tr>
             </thead>
@@ -151,7 +150,7 @@ export function Monitoring() {
                       {row.humidity?.toFixed(1) || '-'}
                     </td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                      {(activeNode === 2 ? row.ph : row.soil_moisture)?.toFixed(1) || '-'}
+                      {row.soil_moisture?.toFixed(1) || '-'}
                     </td>
                   </tr>
                 ))

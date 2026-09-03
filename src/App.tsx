@@ -121,7 +121,6 @@ function App() {
       temperature: null,
       humidity: null,
       soil_moisture: null,
-      ph: null,
       created_at: new Date().toISOString(),
     };
 
@@ -132,7 +131,6 @@ function App() {
       temperature: live?.temperature ?? fallbackObject.temperature ?? null,
       humidity: live?.humidity ?? fallbackObject.humidity ?? null,
       soil_moisture: live?.soil_moisture ?? fallbackObject.soil_moisture ?? null,
-      ph: live?.ph ?? fallbackObject.ph ?? null,
       created_at: live?.updatedAt ?? fallbackObject.created_at ?? new Date().toISOString(),
     };
   }, [sensorData, mqttStatus.sensorSnapshot, settings]);

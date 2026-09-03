@@ -27,7 +27,6 @@ export interface SensorSnapshotContext {
   temperature?: number | null;
   humidity?: number | null;
   soil_moisture?: number | null;
-  ph?: number | null;
   created_at?: string | null;
   updatedAt?: string | null;
   sourceTopic?: string | null;
@@ -53,7 +52,6 @@ interface SensorSnapshotApi {
   temperature?: number | string | null;
   humidity?: number | string | null;
   soil_moisture?: number | string | null;
-  ph?: number | string | null;
   created_at?: string | null;
   updatedAt?: string | null;
   sourceTopic?: string | null;
@@ -79,7 +77,6 @@ interface SensorSnapshotResponse {
   temperature?: number;
   humidity?: number;
   soil_moisture?: number;
-  ph?: number;
   created_at?: string | null;
   updatedAt?: string | null;
   sourceTopic?: string | null;
@@ -134,7 +131,6 @@ function normalizeSensorContext(input: unknown): Partial<SensorSnapshotContext> 
     temperature: safeNumber(sensor.temperature),
     humidity: safeNumber(sensor.humidity),
     soil_moisture: safeNumber(sensor.soil_moisture),
-    ph: safeNumber(sensor.ph),
     created_at: typeof sensor.created_at === 'string' ? sensor.created_at : null,
     updatedAt: typeof sensor.updatedAt === 'string' ? sensor.updatedAt : null,
     sourceTopic: typeof sensor.sourceTopic === 'string' ? sensor.sourceTopic : null,

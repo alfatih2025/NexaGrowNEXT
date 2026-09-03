@@ -24,7 +24,7 @@ export function Dashboard({ sensorData, settings, weatherData }: DashboardProps)
   );
   const isNode2Online = Boolean(
     node2 &&
-      (node2.temperature !== null || node2.humidity !== null || node2.ph !== null) &&
+      (node2.temperature !== null || node2.humidity !== null || node2.soil_moisture !== null) &&
       (!node2.created_at || new Date().getTime() - new Date(node2.created_at).getTime() < 15 * 60 * 1000)
   );
   
@@ -111,9 +111,9 @@ export function Dashboard({ sensorData, settings, weatherData }: DashboardProps)
               <tr className="hover:bg-slate-100 dark:hover:bg-slate-800/20 transition-colors">
                 <td className="py-3 px-4 font-medium">Sensor Tanah</td>
                 <td className="py-3 px-4">Kelembapan: {node1?.soil_moisture?.toFixed(1) || '--'} %</td>
-                <td className="py-3 px-4">pH Tanah: {node2?.ph?.toFixed(1) || '--'}</td>
+                <td className="py-3 px-4">Kelembapan: {node2?.soil_moisture?.toFixed(1) || '--'} %</td>
                 <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
-                  Tidak dibandingkan (satuan berbeda)
+                  {node1?.soil_moisture && node2?.soil_moisture ? Math.abs(node1.soil_moisture - node2.soil_moisture).toFixed(1) + ' %' : '--'}
                 </td>
               </tr>
             </tbody>

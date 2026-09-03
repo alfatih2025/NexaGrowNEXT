@@ -6,7 +6,6 @@ export interface NodeSensorData {
   temperature: number | null;
   humidity: number | null;
   soil_moisture: number | null;
-  ph: number | null;
   created_at: string;
 }
 
@@ -30,7 +29,6 @@ function normalizeNodeData(row: Record<string, unknown>): NodeSensorData | null 
     temperature: toNumber(row.temperature),
     humidity: toNumber(row.humidity),
     soil_moisture: toNumber(row.soil_moisture),
-    ph: toNumber(row.ph ?? row.pH ?? row.ph_tanah),
     created_at: typeof row.created_at === 'string' ? row.created_at : new Date().toISOString(),
   };
 }
@@ -43,7 +41,6 @@ function normalizeMqttSensor(snap: MqttSensorSnapshot): NodeSensorData | null {
     temperature: snap.temperature,
     humidity: snap.humidity,
     soil_moisture: snap.soil_moisture,
-    ph: snap.ph,
     created_at: snap.updatedAt || new Date().toISOString(),
   };
 }

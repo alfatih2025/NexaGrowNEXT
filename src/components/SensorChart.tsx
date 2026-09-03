@@ -12,7 +12,7 @@ import { SensorData } from '../hooks/useSensorData';
 
 interface SensorChartProps {
   data: any[];
-  type: 'temperature' | 'humidity' | 'soil_moisture' | 'ph';
+  type: 'temperature' | 'humidity' | 'soil_moisture';
   title: string;
   color: string;
 }
@@ -21,7 +21,6 @@ const typeConfig = {
   temperature: { label: 'Suhu (°C)', min: 15, max: 45 },
   humidity: { label: 'Kelembapan (%)', min: 0, max: 100 },
   soil_moisture: { label: 'Kelembapan Tanah (%)', min: 0, max: 100 },
-  ph: { label: 'pH Tanah', min: 0, max: 14 },
 };
 
 export function SensorChart({ data, type, title, color }: SensorChartProps) {
