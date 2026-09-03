@@ -51,10 +51,17 @@ export function useMultiNodeSensorData() {
   const [loading, setLoading] = useState(true);
 
   const applyNodeData = useCallback((next: NodeSensorData) => {
+    const mergeIfNewer = (prev: NodeSensorData | null) => {
+      if (!prev) return { ...next };
+      const prevTime = new Date(prev.created_at).getTime();
+      const nextTime = new Date(next.created_at).getTime();
+      return nextTime >= prevTime ? { ...prev, ...next } : prev;
+    };
+
     if (next.node_id === 1) {
-      setNode1((prev) => ({ ...prev, ...next }));
+      setNode1(mergeIfNewer);
     } else if (next.node_id === 2) {
-      setNode2((prev) => ({ ...prev, ...next }));
+      setNode2(mergeIfNewer);
     }
   }, []);
 

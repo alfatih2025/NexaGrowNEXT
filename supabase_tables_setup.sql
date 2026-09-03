@@ -317,13 +317,13 @@ ON CONFLICT (id) DO NOTHING;
 -- =====================================================================
 
 -- Uncomment ini jika ingin memberikan akses ke service role
--- GRANT ALL ON sensor_data TO anon, authenticated;
--- GRANT ALL ON settings TO anon, authenticated;
--- GRANT ALL ON alerts TO anon, authenticated;
--- GRANT ALL ON chat_messages TO anon, authenticated;
--- GRANT ALL ON activity_logs TO anon, authenticated;
--- GRANT ALL ON control_logs TO anon, authenticated;
--- GRANT ALL ON devices TO anon, authenticated;
+GRANT ALL ON sensor_data TO anon, authenticated;
+GRANT ALL ON settings TO anon, authenticated;
+GRANT ALL ON alerts TO anon, authenticated;
+GRANT ALL ON chat_messages TO anon, authenticated;
+GRANT ALL ON activity_logs TO anon, authenticated;
+GRANT ALL ON control_logs TO anon, authenticated;
+GRANT ALL ON devices TO anon, authenticated;
 
 -- =====================================================================
 -- SELESAI - Semua tables berhasil dibuat!

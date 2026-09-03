@@ -12,6 +12,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AiRouterPage } from './pages/AiRouterPage';
 import { AboutPage } from './pages/AboutPage';
 import { useSensorData } from './hooks/useSensorData';
+import { useMultiNodeSensorData } from './hooks/useMultiNodeSensorData';
 import { useDeviceStatus } from './hooks/useDeviceStatus';
 
 
@@ -109,31 +110,22 @@ function App() {
       window.history.replaceState(null, '', path);
     }
   }, [currentPage]);
-
+  const { node1, node2 } = useMultiNodeSensorData();
+  
   const liveSensorData = useMemo(() => {
-    const live = mqttStatus.sensorSnapshot;
-    const fallback = sensorData ?? null;
-    if (!fallback && !live) return null;
-
-    const fallbackObject = fallback ?? {
-      node_id: null,
-      device_id: 'ESP32_001',
-      temperature: null,
-      humidity: null,
-      soil_moisture: null,
-      created_at: new Date().toISOString(),
-    };
-
+    // Gunakan node1 sebagai sumber utama untuk AI dan Health Status
+    // atau gunakan rata-rata dari kedua node jika keduanya ada.
+    if (!node1 && !node2) return null;
+    
     return {
-      ...fallbackObject,
-      node_id: live?.node_id ?? fallbackObject.node_id ?? null,
-      device_id: live?.device_id ?? fallbackObject.device_id ?? 'ESP32_001',
-      temperature: live?.temperature ?? fallbackObject.temperature ?? null,
-      humidity: live?.humidity ?? fallbackObject.humidity ?? null,
-      soil_moisture: live?.soil_moisture ?? fallbackObject.soil_moisture ?? null,
-      created_at: live?.updatedAt ?? fallbackObject.created_at ?? new Date().toISOString(),
+      node_id: node1?.node_id ?? node2?.node_id ?? 1,
+      device_id: 'ESP32_001',
+      temperature: node1?.temperature ?? node2?.temperature ?? null,
+      humidity: node1?.humidity ?? node2?.humidity ?? null,
+      soil_moisture: node1?.soil_moisture ?? node2?.soil_moisture ?? null,
+      created_at: node1?.created_at ?? node2?.created_at ?? new Date().toISOString(),
     };
-  }, [sensorData, mqttStatus.sensorSnapshot, settings]);
+  }, [node1, node2]);
 
   const health = useMemo(() => {
     if (!settings) return null;

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Wifi, AlertCircle, Activity, CalendarClock, Droplets, Thermometer } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useMqttStatus } from '../hooks/useMqttStatus';
+import { useMultiNodeSensorData } from '../hooks/useMultiNodeSensorData';
 
 function formatOneDecimal(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return 'N/A';
@@ -38,6 +39,7 @@ function StatTile({
 
 export function MqttStatus() {
   const status = useMqttStatus();
+  const { node1 } = useMultiNodeSensorData();
   const sensor = status.sensorSnapshot;
   const statusTone = status.espOnline ? 'good' : 'danger';
 
@@ -69,15 +71,15 @@ export function MqttStatus() {
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile label="ESP32" value={status.espOnline ? 'Online' : 'Offline'} icon={Activity} tone={status.espOnline ? 'good' : 'danger'} />
         <StatTile
-          label="Node"
-          value={sensor?.node_id != null ? `${sensor.node_id}` : 'N/A'}
+          label="Node Utama"
+          value={node1?.node_id != null ? `${node1.node_id}` : '1'}
           icon={CalendarClock}
           tone="good"
         />
-        <StatTile label="Suhu" value={`${formatOneDecimal(sensor?.temperature)}${sensor?.temperature != null ? '°C' : ''}`} icon={Thermometer} tone="warning" />
+        <StatTile label="Suhu (N1)" value={`${formatOneDecimal(node1?.temperature)}${node1?.temperature != null ? '°C' : ''}`} icon={Thermometer} tone="warning" />
         <StatTile
-          label="Kelembapan Tanah"
-          value={`${formatOneDecimal(sensor?.soil_moisture)}${sensor?.soil_moisture != null ? '%' : ''}`}
+          label="Kelembapan Tanah (N1)"
+          value={`${formatOneDecimal(node1?.soil_moisture)}${node1?.soil_moisture != null ? '%' : ''}`}
           icon={Droplets}
           tone="warning"
         />
