@@ -21,10 +21,12 @@ export default async function handler(req, res) {
     // Get history untuk tanggal tertentu atau hari ini
     if (req.method === 'GET') {
       const { date, target = 'today' } = req.query;
+      // Normalize target — strip any suffix like ":1" (e.g. "yesterday:1" → "yesterday")
+      const normalizedTarget = (target || 'today').split(':')[0].trim().toLowerCase();
 
       let history = null;
 
-      if (target === 'yesterday') {
+      if (normalizedTarget === 'yesterday') {
         history = await getYesterdayHistory();
       } else if (date) {
         history = await getDailyHistory(date);
