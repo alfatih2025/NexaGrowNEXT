@@ -139,6 +139,7 @@ const defaultSnapshot = (): MqttStatusSnapshot => ({
 
 let snapshot: MqttStatusSnapshot = defaultSnapshot();
 let sensorSnapshot: MqttSensorSnapshot | null = null;
+let sensorSnapshotByNode: Map<number, MqttSensorSnapshot> = new Map();
 let sensorHistory: MqttSensorSnapshot[] = [];
 let reconnectTimer: number | null = null;
 
@@ -196,11 +197,33 @@ function pushHistory(entry: MqttSensorSnapshot) {
 
 function setSensorSnapshot(next: SensorDelta, sourceTopic: string, force = false) {
   const now = new Date().toISOString();
+  const nodeId = next.node_id;
+
+  // --- Per-node snapshot (anti-glitch) ---
+  if (nodeId != null) {
+    const prevNode = sensorSnapshotByNode.get(nodeId) ?? { ...emptySensorSnapshot, node_id: nodeId };
+    const mergedNode: MqttSensorSnapshot = {
+      ...prevNode,
+      ...next,
+      updatedAt: now,
+      sourceTopic,
+    };
+
+    // Deduplikasi: jika nilai sensor identik, jangan emit ulang
+    const prevKey = JSON.stringify({ t: prevNode.temperature, h: prevNode.humidity, s: prevNode.soil_moisture });
+    const nextKey = JSON.stringify({ t: mergedNode.temperature, h: mergedNode.humidity, s: mergedNode.soil_moisture });
+    if (!force && prevKey === nextKey) {
+      // Data sensor sama persis, skip re-render
+      return;
+    }
+
+    sensorSnapshotByNode.set(nodeId, mergedNode);
+  }
+
+  // --- Legacy single snapshot (untuk kompabilitas) ---
   const previous = sensorSnapshot ?? emptySensorSnapshot;
-  // Data dari tiap node membawa sensor tanah yang berbeda. Jangan biarkan
-  // nilai soil Node 1 ikut terbawa saat paket baru berasal dari Node 2.
-  const base = next.node_id != null && next.node_id !== previous.node_id
-    ? { ...emptySensorSnapshot, node_id: next.node_id }
+  const base = nodeId != null && nodeId !== previous.node_id
+    ? { ...emptySensorSnapshot, node_id: nodeId }
     : previous;
   const merged: MqttSensorSnapshot = {
     ...base,
@@ -208,30 +231,6 @@ function setSensorSnapshot(next: SensorDelta, sourceTopic: string, force = false
     updatedAt: now,
     sourceTopic,
   };
-
-  const comparableBase = {
-    ...base,
-    updatedAt: null,
-    sourceTopic: null,
-  };
-
-  const comparableNext = {
-    ...merged,
-    updatedAt: null,
-    sourceTopic: null,
-  };
-
-  const changed = force || JSON.stringify(comparableBase) !== JSON.stringify(comparableNext);
-  if (!changed) {
-    snapshot = {
-      ...snapshot,
-      lastTopic: sourceTopic,
-      lastPayload: null,
-      lastMessageAt: now,
-    };
-    emit();
-    return;
-  }
 
   sensorSnapshot = merged;
   pushHistory(merged);
@@ -642,6 +641,10 @@ export function getMqttStatusSnapshot() {
 
 export function getSensorSnapshot() {
   return snapshot.sensorSnapshot;
+}
+
+export function getNodeSensorSnapshot(nodeId: number): MqttSensorSnapshot | null {
+  return sensorSnapshotByNode.get(nodeId) ?? null;
 }
 
 export function getSensorHistorySnapshot() {

@@ -11,7 +11,6 @@ import { LogsPage } from './pages/LogsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AiRouterPage } from './pages/AiRouterPage';
 import { AboutPage } from './pages/AboutPage';
-import { useSensorData } from './hooks/useSensorData';
 import { useMultiNodeSensorData } from './hooks/useMultiNodeSensorData';
 import { useDeviceStatus } from './hooks/useDeviceStatus';
 
@@ -53,8 +52,6 @@ function App() {
     if (typeof window === 'undefined') return 'dashboard';
     return resolvePageFromPath(window.location.pathname) as PageId;
   });
-  const { data: sensorData, history, loading: sensorLoading } = useSensorData(10000);
-
   const { status: deviceStatus } = useDeviceStatus(5000);
 
   const { settings, updateSettings } = useSettings();

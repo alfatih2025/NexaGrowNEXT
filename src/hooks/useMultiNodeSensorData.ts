@@ -1,5 +1,5 @@
-import { useCallback, useState, useEffect } from 'react';
-import { subscribeMqttStatus, getMqttStatusSnapshot, type MqttSensorSnapshot } from '../services/mqtt';
+import { useCallback, useState, useEffect, useRef } from 'react';
+import { subscribeMqttStatus, getNodeSensorSnapshot, type MqttSensorSnapshot } from '../services/mqtt';
 
 export interface NodeSensorData {
   node_id: number;
@@ -33,7 +33,7 @@ function normalizeNodeData(row: Record<string, unknown>): NodeSensorData | null 
   };
 }
 
-function normalizeMqttSensor(snap: MqttSensorSnapshot): NodeSensorData | null {
+function snapshotToNodeData(snap: MqttSensorSnapshot): NodeSensorData | null {
   if (snap.node_id !== 1 && snap.node_id !== 2) return null;
 
   return {
@@ -45,27 +45,41 @@ function normalizeMqttSensor(snap: MqttSensorSnapshot): NodeSensorData | null {
   };
 }
 
+/** Bandingkan nilai sensor (tanpa timestamp) */
+function isSameValues(a: NodeSensorData | null, b: NodeSensorData | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.node_id === b.node_id &&
+    a.temperature === b.temperature &&
+    a.humidity === b.humidity &&
+    a.soil_moisture === b.soil_moisture
+  );
+}
+
 export function useMultiNodeSensorData() {
   const [node1, setNode1] = useState<NodeSensorData | null>(null);
   const [node2, setNode2] = useState<NodeSensorData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const applyNodeData = useCallback((next: NodeSensorData) => {
-    const mergeIfNewer = (prev: NodeSensorData | null) => {
-      if (!prev) return { ...next };
-      const prevTime = new Date(prev.created_at).getTime();
-      const nextTime = new Date(next.created_at).getTime();
-      return nextTime >= prevTime ? { ...prev, ...next } : prev;
-    };
+  // Ref untuk perbandingan cepat tanpa re-render
+  const node1Ref = useRef<NodeSensorData | null>(null);
+  const node2Ref = useRef<NodeSensorData | null>(null);
 
+  const applyNodeData = useCallback((next: NodeSensorData) => {
     if (next.node_id === 1) {
-      setNode1(mergeIfNewer);
+      // Hanya update state jika nilai sensor BENAR-BENAR berubah
+      if (isSameValues(node1Ref.current, next)) return;
+      node1Ref.current = next;
+      setNode1(next);
     } else if (next.node_id === 2) {
-      setNode2(mergeIfNewer);
+      if (isSameValues(node2Ref.current, next)) return;
+      node2Ref.current = next;
+      setNode2(next);
     }
   }, []);
 
-  // 1. Initial fetch + polling fallback from Vercel/Supabase
+  // 1. Initial fetch + polling fallback dari Vercel/Supabase
   useEffect(() => {
     let cancelled = false;
 
@@ -98,13 +112,21 @@ export function useMultiNodeSensorData() {
     };
   }, [applyNodeData]);
 
-  // 2. Real-time updates from MQTT
+  // 2. Real-time MQTT — baca dari per-node snapshot (bukan snapshot tunggal)
   useEffect(() => {
     const unsubscribe = subscribeMqttStatus(() => {
-      const status = getMqttStatusSnapshot();
-      const snap = status.sensorSnapshot;
-      const normalized = snap ? normalizeMqttSensor(snap) : null;
-      if (normalized) applyNodeData(normalized);
+      // Baca per-node snapshot langsung, bukan dari sensorSnapshot yang flip-flop
+      const snap1 = getNodeSensorSnapshot(1);
+      const snap2 = getNodeSensorSnapshot(2);
+
+      if (snap1) {
+        const data = snapshotToNodeData(snap1);
+        if (data) applyNodeData(data);
+      }
+      if (snap2) {
+        const data = snapshotToNodeData(snap2);
+        if (data) applyNodeData(data);
+      }
     });
 
     return () => { unsubscribe(); };

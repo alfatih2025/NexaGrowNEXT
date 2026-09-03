@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Activity } from 'lucide-react';
 import { SensorChart } from '../components/SensorChart';
 import type { NodeSensorData } from '../hooks/useMultiNodeSensorData';
-import { subscribeMqttStatus, getMqttStatusSnapshot } from '../services/mqtt';
+import { subscribeMqttStatus, getNodeSensorSnapshot } from '../services/mqtt';
 
 export function Monitoring() {
   const [activeNode, setActiveNode] = useState<number>(1);
   const [history, setHistory] = useState<NodeSensorData[]>([]);
   const [loading, setLoading] = useState(true);
+  const lastValueKeyRef = useRef<string>('');
 
   const fetchHistory = async (nodeId: number) => {
     setLoading(true);
@@ -25,6 +26,7 @@ export function Monitoring() {
   };
 
   useEffect(() => {
+    lastValueKeyRef.current = '';
     fetchHistory(activeNode);
     // HTTP polling is slowed down to 15 seconds to save database/network
     // Real-time updates are now handled by MQTT below
@@ -35,11 +37,16 @@ export function Monitoring() {
   // Real-time MQTT listener for chart history
   useEffect(() => {
     const unsubscribe = subscribeMqttStatus(() => {
-      const snap = getMqttStatusSnapshot().sensorSnapshot;
-      if (!snap || snap.node_id !== activeNode) return;
+      // Baca dari per-node snapshot (stabil, tidak flip-flop)
+      const snap = getNodeSensorSnapshot(activeNode);
+      if (!snap) return;
+      
+      // Deduplikasi berdasarkan nilai sensor (bukan hanya timestamp)
+      const valueKey = `${snap.temperature}|${snap.humidity}|${snap.soil_moisture}`;
+      if (valueKey === lastValueKeyRef.current) return;
+      lastValueKeyRef.current = valueKey;
       
       setHistory(prev => {
-        // Avoid duplicates based on timestamp
         if (prev.length > 0 && prev[0].created_at === snap.updatedAt) return prev;
         
         const newRow: NodeSensorData = {
