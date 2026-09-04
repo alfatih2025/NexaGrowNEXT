@@ -107,7 +107,7 @@ function App() {
       window.history.replaceState(null, '', path);
     }
   }, [currentPage]);
-  const { node1, node2 } = useMultiNodeSensorData();
+  const { node1, node2, loading: sensorLoading } = useMultiNodeSensorData();
   
   const liveSensorData = useMemo(() => {
     // Gunakan node1 sebagai sumber utama untuk AI dan Health Status
@@ -275,7 +275,7 @@ function App() {
     );
   }
 
-  if (sensorLoading && !sensorData) {
+  if (sensorLoading && !liveSensorData) {
     return (
       <div className="min-h-screen">
         <motion.div
